@@ -2558,9 +2558,9 @@ local ReachGroupBox = Tabs.Main:AddLeftGroupbox("远程") do
     })
 end
 
-local AutomationGroupBox = Tabs.Main:AddRightGroupbox("自动类") do
+local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
     AutomationGroupBox:AddToggle("AutoInteract", {
-        Text = "自动互动",
+        Text = "自动互动【修复】",
         Default = false
     }):AddKeyPicker("AutoInteractKey", {
         Mode = Library.IsMobile and "Toggle" or "Hold",
