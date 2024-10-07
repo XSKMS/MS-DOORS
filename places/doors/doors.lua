@@ -5218,27 +5218,27 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
                         Script.Functions.EntityESP(child)  
                     end
 
-                    if Options.NotifyEntity.Value[shortName] then
+                    if Options.NotifyEntity.Value[shortName] == true then
                         Script.Functions.Alert({
-                            Title = "警告",
-                            Description = shortName .. " 怪物生成了！",
-                            Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "去寻找一个藏身的地方!" or nil),
+                            Title = "ENTITIES",
+                            Description = shortName .. " 怪物出现!",
+                            Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "Go find a hiding place!" or nil),
                             Image = EntityTable.NotifyReason[child.Name].Image,
 
                             Warning = true
                         })
 
                         if Toggles.NotifyChat.Value then
-                            RBXGeneral:SendAsync(shortName .. " 怪物出现！！!")
+                            RBXGeneral:SendAsync(shortName .. " 怪物出现!")
                         end
                     end
                 end
             end)
         elseif EntityTable.NotifyMessage[child.Name] and Options.NotifyEntity.Value[shortName] then
             Script.Functions.Alert({
-                Title = "警告",
-                Description = shortName .. " 怪物刷新",
-                Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "去寻找一个藏身的地方!" or nil),
+                Title = "ENTITIES",
+                Description = shortName .. " 怪物出现!",
+                Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "Go find a hiding place!" or nil),
                 Image = EntityTable.NotifyReason[child.Name].Image,
 
                 Warning = true
