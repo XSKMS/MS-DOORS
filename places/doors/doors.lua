@@ -3,7 +3,7 @@
 local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/VeaMSRZK"))()
 
 OrionLib:MakeNotification({
-                    Name = "XSKil Msa 汉 付费高级版",
+                    Name = "XSKil Msa 汉化付费高级版",
                     Content = "欢迎使用",
                     Time = 4
                 })    
@@ -48,6 +48,7 @@ OrionLib:MakeNotification({
 sound.SoundId = "rbxassetid://4590662766"
 sound:Play()
 
+print("[mspaint] Loading...")
 if not ExecutorSupport then print("[mspaint] Loading stopped, please use the official loadstring for mspaint. (ERROR: ExecutorSupport == nil)") return end
 if getgenv().mspaint_loaded then print("[mspaint] Loading stopped. (ERROR: Already loaded)") return end
 
@@ -67,7 +68,8 @@ local Workspace = game:GetService("Workspace")
 --// Loading Wait \\--
 if not game:IsLoaded() then game.Loaded:Wait() end
 if Players.LocalPlayer and Players.LocalPlayer.PlayerGui:FindFirstChild("LoadingUI") and Players.LocalPlayer.PlayerGui.LoadingUI.Enabled then
-    repeat task.wait() until not game.Players.LocalPlayer.PlayerGui.LoadingUI.Enabled
+    print("[mspaint] Waiting for game to load...")
+    repeat task.wait() until not Players.LocalPlayer.PlayerGui:FindFirstChild("LoadingUI") and true or not Players.LocalPlayer.PlayerGui.LoadingUI.Enabled
 end
 
 --// Variables \\--
@@ -90,6 +92,7 @@ local Script = {
         SideEntity = {},
         Gold = {},
         Guiding = {},
+        DroppedItem = {},
         Item = {},
         Objective = {},
         Player = {},
@@ -162,7 +165,7 @@ local EntityTable = {
         ["JeffTheKiller"] = "Jeff The Killer"
     },
     ["NotifyMessage"] = {
-        ["GloombatSwarm"] = "Gloombats in next room!"
+        ["GloombatSwarm"] = "Gloombats 将在下一扇门出现!"
     },
     ["Avoid"] = {
         "RushMoving",
@@ -198,6 +201,10 @@ local EntityTable = {
         },
         ["GloombatSwarm"] = {
             ["Image"] = "79221203116470",
+            ["Spawned"] = true
+        },
+        ["HaltRoom"] = {
+            ["Image"] = "11331795398",
             ["Spawned"] = true
         }
     },
@@ -260,8 +267,8 @@ local HidingPlaceName = {
     ["Fools"] = "铁柜",
     ["Retro"] = "铁柜",
 
-    ["Rooms"] = "锁柜",
-    ["Mines"] = "锁柜"
+    ["Rooms"] = "Locker",
+    ["Mines"] = "Locker"
 }
 local CutsceneExclude = {
     "FigureHotelChase",
@@ -333,6 +340,19 @@ local PromptTable = {
         }
     }
 }
+
+local HideTimeValues = {
+    {min = 1, max = 5, a = -1/6, b = 1, c = 20},
+    {min = 6, max = 19, a = -1/13, b = 6, c = 19},
+    {min = 19, max = 22, a = -1/4, b = 19, c = 18},
+    {min = 23, max = 26, a = 1/3, b = 23, c = 18},
+    {min = 26, max = 30, a = -1/4, b = 26, c = 19},
+    {min = 30, max = 35, a = -1/3, b = 30, c = 18},
+    {min = 36, max = 60, a = -1/12, b = 36, c = 18},
+    {min = 60, max = 90, a = -1/30, b = 60, c = 16},
+    {min = 90, max = 99, a = -1/6, b = 90, c = 15}
+}
+
 
 local RBXGeneral = TextChatService.TextChannels.RBXGeneral
 
@@ -445,7 +465,7 @@ local Toggles = getgenv().Linoria.Toggles
 local ESPLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/mstudio45/MS-ESP/refs/heads/main/source.lua"))()
 
 local Window = Library:CreateWindow({
-    Title = "XSKIL MS 【修复】X:付费版 | DOORS ",
+    Title = "mspaint v2 汉化版 | DOORS | 3.0 ",
     Center = true,
     AutoShow = true,
     Resizable = true,
@@ -456,11 +476,11 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
-    Main = Window:AddTab("主要"),
-    Exploits = Window:AddTab("无效类"),
-    Visuals = Window:AddTab("其余"),
-    Floor = Window:AddTab("楼层功能"),
-    ["UI Settings"] = Window:AddTab("Ui及介绍"),
+    Main = Window:AddTab("主要的"),
+    Exploits = Window:AddTab("移除或无限"),
+    Visuals = Window:AddTab("透视和通知"),
+    Floor = Window:AddTab("楼层"),
+    ["UI Settings"] = Window:AddTab("UI和介绍"),
 }
 
 --// Captions \\--
@@ -493,19 +513,39 @@ local _mspaint_custom_captions = Instance.new("ScreenGui") do
 
     UITextSizeConstraint.MaxTextSize = 35
 
-    function Script.Functions.Captions(caption: string)
-        if _mspaint_custom_captions.Parent == ReplicatedStorage then _mspaint_custom_captions.Parent = gethui() or game:GetService("CoreGui") or playerGui end
-        TextLabel.Text = caption
-    end
-
     function Script.Functions.HideCaptions()
         _mspaint_custom_captions.Parent = ReplicatedStorage
+    end
+
+    local CaptionsLastUsed = os.time()
+    function Script.Functions.Captions(caption: string)
+        CaptionsLastUsed = os.time()
+        if _mspaint_custom_captions.Parent == ReplicatedStorage then _mspaint_custom_captions.Parent = gethui() or game:GetService("CoreGui") or playerGui end
+        
+        TextLabel.Text = caption
+
+        task.spawn(function()
+            task.wait(5)
+            if os.time() - CaptionsLastUsed >= 5 then
+                Script.Functions.HideCaptions()
+            end
+        end)
     end
 end
 
 --// Functions \\--
 getgenv()._internal_unload_mspaint = function()
     Library:Unload()
+end
+
+function Script.Functions.CalculateHideTime(room: number)
+    for _, range in ipairs(HideTimeValues) do
+        if room >= range.min and room <= range.max then
+            return math.round(range.a * (room - range.b) + range.c)
+        end
+    end    
+
+    return nil
 end
 
 function Script.Functions.RandomString()
@@ -574,7 +614,7 @@ do
     end
 
     function Script.Functions.Notifs.Doors.Notify(unsafeOptions)
-        assert(typeof(unsafeOptions) == "table", "Expected a table as options argument but got " .. typeof(unsafeOptions))
+        assert(typeof(unsafeOptions) == "table", "需要一个表作为选项参数，但得到的是 " .. typeof(unsafeOptions))
         if not mainUI then return end
         
         local options = Script.Functions.EnforceTypes(unsafeOptions, {
@@ -848,7 +888,7 @@ do
             local opened = door:GetAttribute("Opened")
             local locked = room:GetAttribute("RequiresKey")
     
-            local doorState = if opened then "[已打开]" elseif locked then "[有锁]" else ""
+            local doorState = if opened then "[打开]" elseif locked then "[上锁]" else ""
             local doorIdx = Script.Functions.RandomString()
     
             local doorEsp = Script.Functions.ESP({
@@ -898,7 +938,7 @@ do
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "闸门杆",
+                Text = "拉杆",
                 Color = Options.ObjectiveEspColor.Value
             })
         elseif child.Name == "LiveHintBook" then
@@ -927,7 +967,7 @@ do
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "门按钮",
+                Text = "门电源按钮",
                 Color = Options.ObjectiveEspColor.Value
             })
         elseif child.Name == "FuseObtain" then
@@ -944,7 +984,7 @@ do
                 Script.Functions.ESP({
                     Type = "Objective",
                     Object = child,
-                    Text = string.format("锚 %s", sign.TextLabel.Text),
+                    Text = string.format("Anchor %s", sign.TextLabel.Text),
                     Color = Options.ObjectiveEspColor.Value
                 })
             end
@@ -955,7 +995,7 @@ do
                 Script.Functions.ESP({
                     Type = "Objective",
                     Object = wheel,
-                    Text = "-水泵-",
+                    Text = "Water Pump",
                     Color = Options.ObjectiveEspColor.Value
                 })
             end
@@ -984,9 +1024,9 @@ do
         })
     end
     
-    function Script.Functions.ItemESP(item)
+    function Script.Functions.ItemESP(item, dropped)
         Script.Functions.ESP({
-            Type = "Item",
+            Type = dropped and "DroppedItem" or "Item",
             Object = item,
             Text = Script.Functions.GetShortName(item.Name),
             Color = Options.ItemEspColor.Value
@@ -994,7 +1034,7 @@ do
     end
     
     function Script.Functions.ChestESP(chest)
-        local text = chest.Name:gsub("Box", ""):gsub("_Vine", ""):gsub("_Small", "")
+        local text = chest.Name:gsub("Box", ""):gsub("_Vine", ""):gsub("_Small", ""):gsub("Locked", "")
         local locked = chest:GetAttribute("Locked")
         local state = if locked then "[上锁]" else ""
     
@@ -1242,7 +1282,7 @@ do
             end)
     
             assert(success, "运行条件函数时出错.\n" .. tostring(returnData))
-            assert(typeof(returnData) == "boolean", "条件函数返回布尔值")
+            assert(typeof(returnData) == "布尔", "期望条件函数返回布尔值")
             
             if returnData then
                 table.insert(validPrompts, prompt)
@@ -1304,7 +1344,7 @@ do
             if collision:IsDescendantOf(workspace) and (collision.Parent and collision.Parent.Name == "TriggerEventCollision") then
                 Script.Functions.Alert({
                     Title = "Delete Seek FE",
-                    Description = "移除Seek中...",
+                    Description = "删除Seek...",
                     Reason = "",
                 })
     
@@ -1312,7 +1352,7 @@ do
                     if collision:IsDescendantOf(workspace) then
                         Script.Functions.Alert({
                             Title = "Delete Seek FE",
-                            Description = "移除成功！!",
+                            Description = "Seek已删除!",
                             Reason = "",
                         })
                     end
@@ -1338,7 +1378,7 @@ do
                 if not collision:IsDescendantOf(workspace) then
                     Script.Functions.Log({
                         Title = "Delete Seek FE",
-                        Description = "删除Seek成功运行!",
+                        Description = "移除Seek成功!",
                     })
                 end
             end
@@ -1394,7 +1434,7 @@ do
         task.spawn(function() 
             Script.Functions.Log({
                 Title = NotifPrefix,
-                Description = "寻找柜子..",
+                Description = "寻找柜子",
         
                 LinoriaMessage = "[" .. NotifPrefix .. "] 寻找柜子..."
             }, Toggles.AutoWardrobeNotif.Value)
@@ -1483,9 +1523,9 @@ do
                         task.spawn(function() 
                             Script.Functions.Log({
                                 Title = NotifPrefix,
-                                Description = "退出柜子，怪消失.",
+                                Description = "退出柜子，怪物远离.",
                                 
-                                LinoriaMessage = "[" .. NotifPrefix .. "] 退出柜子，怪消失."
+                                LinoriaMessage = "[" .. NotifPrefix .. "] 退出柜子，怪物远离."
                             }, Toggles.AutoWardrobeNotif.Value)
                         end)
     
@@ -1495,7 +1535,7 @@ do
                             task.spawn(function() 
                                 Script.Functions.Log({
                                     Title = NotifPrefix,
-                                    Description = "退出锁定程序时，实体被删除.",
+                                    Description = "退出时，实体被删除.",
                                     
                                     LinoriaMessage = "[" .. NotifPrefix .. "] 退出锁定程序时，实体被删除."
                                 }, Toggles.AutoWardrobeNotif.Value)
@@ -1506,7 +1546,7 @@ do
                     end
     
                     if not alive then  
-                        if Toggles.AutoWardrobeNotif.Value then Script.Functions.Log("[" .. NotifPrefix .. "] Stopping (you died).") end             
+                        if Toggles.AutoWardrobeNotif.Value then Script.Functions.Log("[" .. NotifPrefix .. "] 停止(你死了).") end             
                         task.spawn(function() 
                             Script.Functions.Log({
                                 Title = NotifPrefix,
@@ -1552,9 +1592,9 @@ do
                 task.spawn(function() 
                     Script.Functions.Log({
                         Title = NotifPrefix,
-                        Description = "等待Ambush靠近...",
+                        Description = "等待Ambush足够近...",
         
-                        LinoriaMessage = "[" .. NotifPrefix .. "] 等待Ambush靠近...",
+                        LinoriaMessage = "[" .. NotifPrefix .. "] 等待Ambush足够近...",
                     }, Toggles.AutoWardrobeNotif.Value)
                 end)
     
@@ -1633,7 +1673,7 @@ do
     
         Script.Functions.Alert({
             Title = "Auto Breaker Solver",
-            Description = "解开断路器盒...",
+            Description = "解决断路器盒...",
             Reason = ""
         })
     
@@ -1668,7 +1708,7 @@ do
     
             Script.Functions.Alert({
                 Title = "Auto Breaker Solver",
-                Description = "断路器箱已成功解开.",
+                Description = "断路器已成功解决.",
             })
         end
     end
@@ -1969,7 +2009,7 @@ do
                 table.remove(realNodes, _firstKeep + 1)
             end
         else
-            print("[NodeDestroy] 无法破坏真正的节点.")
+            print("[NodeDestroy] Unable to destroy REAL nodes.")
         end
     
         if fakeNodes then
@@ -1979,10 +2019,10 @@ do
             end
             fakeNodes = {} --if we now all the nodes will be destroyed then just make that.
         else
-            print("[NodeDestroy] 无法破坏假节点.")
+            print("[NodeDestroy] Unable to destroy FAKE nodes.")
         end
     
-        print(string.format("[NodeDestroy] 任务已完成，剩余:实际节点: %d | 假节点 %s", #realNodes, #fakeNodes))
+        print(string.format("[NodeDestroy] Task completed, remaining: Real nodes: %d | Fake nodes %s", #realNodes, #fakeNodes))
     end
     
     local isMinecartTeleporting = false --for debug purpouses.
@@ -2085,6 +2125,16 @@ do
     end
     
     function Script.Functions.SetupRoomConnection(room)
+        if Options.NotifyEntity.Value["Halt Room"] and room:GetAttribute("RawName") == "HaltHallway" then
+            Script.Functions.Alert({
+                Title = "警告",
+                Description = "Halt 将在下一扇门生成!",
+                Image = EntityTable.NotifyReason["HaltRoom"].Image,
+
+                Warning = true
+            })
+        end
+
         for _, child in pairs(room:GetDescendants()) do
             task.spawn(function()
                 if Toggles.DeleteSeek.Value and rootPart and child.Name == "Collision" then
@@ -2108,7 +2158,7 @@ do
     
     function Script.Functions.SetupDropConnection(drop)
         if Toggles.ItemESP.Value then
-            Script.Functions.ItemESP(drop)
+            Script.Functions.ItemESP(drop, true)
         end
     
         task.spawn(function()
@@ -2298,7 +2348,7 @@ do
     
                         Script.Functions.Alert({
                             Title = "Lagback Detection",
-                            Description = "固定...",
+                            Description = "固定滞后...",
                         })
                         Toggles.SpeedBypass:SetValue(false)
                         local cframeChanged = false
@@ -2314,7 +2364,7 @@ do
                         Script.Lagback.Detected = false
                         Script.Functions.Alert({
                             Title = "Lagback Detection",
-                            Description = "返回.."
+                            Description = "固定滞后!"
                         })
                     end
                 end
@@ -2420,7 +2470,7 @@ end
 
 local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("玩家") do
     PlayerGroupBox:AddSlider("SpeedSlider", {
-        Text = "速度",
+        Text = "速度调节【在移除类栏可开45速度】",
         Default = 0,
         Min = 0,
         Max = 7,
@@ -2500,7 +2550,7 @@ local ReachGroupBox = Tabs.Main:AddLeftGroupbox("远程") do
     })
 
     ReachGroupBox:AddSlider("PromptReachMultiplier", {
-        Text = "物品互动距离",
+        Text = "调节互动距离",
         Default = 1,
         Min = 1,
         Max = 2,
@@ -2508,7 +2558,7 @@ local ReachGroupBox = Tabs.Main:AddLeftGroupbox("远程") do
     })
 end
 
-local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
+local AutomationGroupBox = Tabs.Main:AddRightGroupbox("自动类") do
     AutomationGroupBox:AddToggle("AutoInteract", {
         Text = "自动互动",
         Default = false
@@ -2526,9 +2576,9 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
     })
 
     AutomationGroupBox:AddToggle("AutoWardrobe", {
-        Text = "自动 " .. HidingPlaceName[floor.Value],
+        Text = "自动躲 " .. HidingPlaceName[floor.Value],
         Default = false,
-        Tooltip = "多个实体可能会失败(RUSH和AMBUSH)",
+        Tooltip = "多个实体可能会失败",
         Visible = not isRetro
     }):AddKeyPicker("AutoWardrobeKey", {
         Mode = "Toggle",
@@ -2551,7 +2601,7 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
         })
 
         AutomationGroupBox:AddSlider("AutoLibraryDistance", {
-            Text = "距离解锁",
+            Text = "自动距离调节",
             Default = 20,
             Min = 1,
             Max = 100,
@@ -2562,15 +2612,15 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
         AutomationGroupBox:AddDivider()
         AutomationGroupBox:AddDropdown("AutoBreakerSolverMethod", {
             AllowNull = false,
-            Values = {"正常解决", "暴力破解"},
+            Values = {"合法的", "剥削"},
             Default = "Legit",
             Multi = false,
 
-            Text = "自动断路器"
+            Text = "自动解断路器"
         })
 
         AutomationGroupBox:AddToggle("AutoBreakerSolver", {
-            Text = "自动拾取断路器盒",
+            Text = "自动捡电路盒",
             Default = false
         })
 
@@ -2602,7 +2652,7 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
         end)
     elseif isMines then
         AutomationGroupBox:AddToggle("AutoAnchorSolver", {
-            Text = "自动解开锚点",
+            Text = "自动锚点解算",
             Default = false
         })
     end
@@ -2618,7 +2668,7 @@ local MiscGroupBox = Tabs.Main:AddRightGroupbox("其余") do
     })
 
     MiscGroupBox:AddButton({
-        Text = "再来一次",
+        Text = "在玩一次",
         Func = function()
             remotesFolder.PlayAgain:FireServer()
         end,
@@ -2626,7 +2676,7 @@ local MiscGroupBox = Tabs.Main:AddRightGroupbox("其余") do
     })
 
     MiscGroupBox:AddButton({
-        Text = "大厅",
+        Text = "返回大厅",
         Func = function()
             remotesFolder.Lobby:FireServer()
         end,
@@ -2636,46 +2686,46 @@ end
 
 --// Exploits \\--
 
-local AntiEntityGroupBox = Tabs.Exploits:AddLeftGroupbox("移除或防伤害-实体") do
+local AntiEntityGroupBox = Tabs.Exploits:AddLeftGroupbox("移除怪物") do
     AntiEntityGroupBox:AddToggle("AntiHalt", {
-        Text = "移除-Halt",
+        Text = "移除-Halt【蓝色幽灵】",
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiScreech", {
-        Text = "移除-Screech",
+        Text = "移除-Screech【小黑子】",
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiDupe", {
-        Text = "移除-" .. (isBackdoor and "真空" or "假门"),
+        Text = "移除-" .. (isBackdoor and "Backdoor真空门" or "假门"),
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiEyes", {
-        Text = "移除-" .. (isBackdoor and "后门影子" or "眼睛"),
+        Text = "移除-" .. (isBackdoor and "Lookman伤害" or "眼睛伤害"),
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiSnare", {
-        Text = "移除-地刺re",
+        Text = "移除-Snare【地刺】",
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiHearing", {
-        Text = "Figure-无法感知你",
+        Text = "移除-Figure 听觉",
         Default = false,
         Visible = not isFools
     })
 end
 
-local TrollingGroupBox = Tabs.Exploits:AddLeftGroupbox("多余功能") do
+local TrollingGroupBox = Tabs.Exploits:AddLeftGroupbox("整蛊") do
     TrollingGroupBox:AddToggle("SpamOtherTools", {
-        Text = "倒立",
+        Text = "不知道",
         Default = false
     }):AddKeyPicker("SpamOtherTools", {
         Default = "X",
-        Text = "垃圾邮件其他工具",
+        Text = "Spam Other Tools",
         Mode = Library.IsMobile and "Toggle" or "Hold",
         SyncToggleState = Library.IsMobile
     })
@@ -2686,14 +2736,14 @@ local TrollingGroupBox = Tabs.Exploits:AddLeftGroupbox("多余功能") do
     })
 end
 
-local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("绕过") do
+local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("速度绕过") do
     BypassGroupBox:AddDropdown("SpeedBypassMethod", {
         AllowNull = false,
         Values = {"Massless", --[["Size"]]},
         Default = "Massless",
         Multi = false,
 
-        Text = "速度旁路"
+        Text = "速度旁路法【开启这些功能速度可开45超快】"
     })
     
     BypassGroupBox:AddSlider("SpeedBypassDelay", {
@@ -2706,7 +2756,7 @@ local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("绕过") do
     })
 
     BypassGroupBox:AddToggle("SpeedBypass", {
-        Text = "速度 绕过",
+        Text = "速度绕过",
         Default = false
     })
 
@@ -2718,10 +2768,20 @@ local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("绕过") do
     BypassGroupBox:AddDivider()
     
     BypassGroupBox:AddToggle("InfItems", {
-        Text = "无限物品【撬锁，十字架，骷髅钥匙】",
+        Text = "无限物品【小部分】",
         Default = false,
         Visible = not isFools
     })
+
+    BypassGroupBox:AddToggle("InfCrucifix", {
+        Text = "无限十字架！",
+        Default = false,
+        Visible = not isFools,
+        Tooltip = "非常冒险lol你可能会死/丢失十字架 :p",
+        Risky = true
+    })
+
+    BypassGroupBox:AddDivider()
 
     BypassGroupBox:AddToggle("FakeRevive", {
         Text = "假复活",
@@ -2729,7 +2789,7 @@ local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("绕过") do
     })
 
     BypassGroupBox:AddToggle("DeleteSeek", {
-        Text = "删除SEEK(FE)",
+        Text = "删除seek(FE)",
         Default = false
     })
 end
@@ -2738,7 +2798,7 @@ end
 --// Visuals \\--
 
 local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
-    local ESPTab = ESPTabBox:AddTab("透视") do
+    local ESPTab = ESPTabBox:AddTab("绘制") do
         ESPTab:AddToggle("DoorESP", {
             Text = "门透视",
             Default = false,
@@ -2803,29 +2863,29 @@ local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
         })
     end
 
-    local ESPSettingsTab = ESPTabBox:AddTab("设置") do
+    local ESPSettingsTab = ESPTabBox:AddTab("Settings") do
         ESPSettingsTab:AddToggle("ESPHighlight", {
-            Text = "轮廓显示",
+            Text = "显示轮廓",
             Default = true,
         })
 
         ESPSettingsTab:AddToggle("ESPTracer", {
-            Text = "线条显示",
+            Text = "移除线条",
             Default = true,
         })
     
         ESPSettingsTab:AddToggle("ESPRainbow", {
-            Text = "彩虹显示",
+            Text = "彩虹绘制",
             Default = false,
         })
     
         ESPSettingsTab:AddToggle("ESPDistance", {
-            Text = "距离显示",
+            Text = "显示距离",
             Default = true
         })
     
         ESPSettingsTab:AddSlider("ESPFillTransparency", {
-            Text = "轮廓亮度",
+            Text = "颜色亮度",
             Default = 0.75,
             Min = 0,
             Max = 1,
@@ -2841,7 +2901,7 @@ local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
         })
     
         ESPSettingsTab:AddSlider("ESPTextSize", {
-            Text = "字体大小",
+            Text = "文本大小",
             Default = 22,
             Min = 16,
             Max = 26,
@@ -2854,14 +2914,14 @@ local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
             Default = "Bottom",
             Multi = false,
 
-            Text = "线条显示位置"
+            Text = "线条绘制位置"
         })
     end
 end
 
 local AmbientGroupBox = Tabs.Visuals:AddLeftGroupbox("环境") do
     AmbientGroupBox:AddSlider("Brightness", {
-        Text = "调节",
+        Text = "高亮亮度调节",
         Default = 0,
         Min = 0,
         Max = 3,
@@ -2879,7 +2939,7 @@ local AmbientGroupBox = Tabs.Visuals:AddLeftGroupbox("环境") do
     })
 
     AmbientGroupBox:AddToggle("AntiLag", {
-        Text = "低级画质",
+        Text = "流畅画质",
         Default = false,
     })
 end
@@ -2888,11 +2948,11 @@ local NotifyTabBox = Tabs.Visuals:AddRightTabbox() do
     local NotifyTab = NotifyTabBox:AddTab("通知") do
         NotifyTab:AddDropdown("NotifyEntity", {
             AllowNull = true,
-            Values = {"Blitz", "Lookman", "Rush", "Ambush", "Eyes", "A60", "A120", "Jeff The Killer", "Gloombat Swarm"},
+            Values = {"Blitz", "Lookman", "Rush", "Ambush", "Eyes", "Halt Room", "A60", "A120", "Jeff The Killer", "Gloombat Swarm"},
             Default = {},
             Multi = true,
 
-            Text = "通知实体选择"
+            Text = "选择要通知的怪物"
         })
 
         NotifyTab:AddToggle("NotifyPadlock", {
@@ -2901,12 +2961,17 @@ local NotifyTabBox = Tabs.Visuals:AddRightTabbox() do
         })
 
         NotifyTab:AddToggle("NotifyOxygen", {
-            Text = "氧气通知",
+            Text = "通知氧气",
+            Default = false,
+        })
+
+        NotifyTab:AddToggle("NotifyHideTime", {
+            Text = "通知隐藏时间",
             Default = false,
         })
     end
 
-    local NotifySettingsTab = NotifyTabBox:AddTab("设置") do
+    local NotifySettingsTab = NotifyTabBox:AddTab("通知设置") do
         NotifySettingsTab:AddToggle("NotifyChat", {
             Text = "聊天通知",
             Tooltip = "Entity and Padlock Code",
@@ -2916,13 +2981,13 @@ local NotifyTabBox = Tabs.Visuals:AddRightTabbox() do
         NotifySettingsTab:AddDivider()
         
         NotifySettingsTab:AddToggle("NotifySound", {
-            Text = "播放提示音",
+            Text = "通知提示音",
             Default = true,
         })
 
         NotifySettingsTab:AddDropdown("NotifySide", {
             AllowNull = false,
-            Values = {"右", "左"},
+            Values = {"左", "右"},
             Default = "Right",
             Multi = false,
 
@@ -2931,16 +2996,16 @@ local NotifyTabBox = Tabs.Visuals:AddRightTabbox() do
 
         NotifySettingsTab:AddDropdown("NotifyStyle", {
             AllowNull = false,
-            Values = {"普通", "成就式的"},
+            Values = {"原版", "doors成就版"},
             Default = "Linoria",
             Multi = false,
 
-            Text = "Notification Style"
+            Text = "通知样式"
         })
     end
 end
 
-local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("自己") do
+local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("自己的") do
     SelfGroupBox:AddToggle("ThirdPerson", {
         Text = "第三人称",
         Default = false
@@ -2988,30 +3053,30 @@ end
 --// Floor \\--
 task.spawn(function()
     if isHotel then
-        local Hotel_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("移除-怪物") do
+        local Hotel_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("移除&绕过&躲避") do
             Hotel_AntiEntityGroupBox:AddToggle("AntiSeekObstructions", {
-                Text = "移除SEEK手臂伤害",
+                Text = "移除-Seek 手臂",
                 Default = false
             })
         end
 
         local Hotel_BypassGroupBox = Tabs.Floor:AddLeftGroupbox("绕过") do
             Hotel_BypassGroupBox:AddToggle("AvoidRushAmbush", {
-                Text = "移除 Rush/Ambush伤害",
-                Tooltip = "对温室不起作用:( lolololololololololololol",
+                Text = "无视 Rush/Ambush",
+                Tooltip = "温室无法使用 :( idklolol",
                 Default = false,
                 Risky = true
             })
         end
 
-        local Hotel_ModifiersGroupBox = Tabs.Floor:AddRightGroupbox("修饰符") do
+        local Hotel_ModifiersGroupBox = Tabs.Floor:AddRightGroupbox("修饰") do
             Hotel_ModifiersGroupBox:AddToggle("AntiA90", {
                 Text = "移除-A90",
                 Default = false
             })
 
             Hotel_ModifiersGroupBox:AddToggle("NoJammin", {
-                Text = "没有Jammin",
+                Text = "无跳脸",
                 Default = false
             })
         end
@@ -3047,9 +3112,9 @@ task.spawn(function()
             if jamminEffect then jamminEffect.Enabled = not value end
         end)
     elseif isMines then
-        local Mines_MovementGroupBox = Tabs.Floor:AddLeftGroupbox("Movement") do
+        local Mines_MovementGroupBox = Tabs.Floor:AddLeftGroupbox("F2修饰绕过") do
             Mines_MovementGroupBox:AddToggle("FastLadder", {
-                Text = "Fast Ladder",
+                Text = "快速梯子",
                 Default = false
             })
 
@@ -3062,7 +3127,7 @@ task.spawn(function()
             })
         end
 
-        local Mines_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("移除-怪物") do
+        local Mines_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("防-怪物") do
             Mines_AntiEntityGroupBox:AddToggle("AntiGiggle", {
                 Text = "移除-Giggle伤害",
                 Default = false
@@ -3079,14 +3144,14 @@ task.spawn(function()
             })
         end
 
-        local Mines_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("Automation") do
+        local Mines_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("自动化") do
             Mines_AutomationGroupBox:AddButton({
-                Text = "自动200门水泵",
+                Text = "自动200水泵",
                 Func = function()
                     if latestRoom.Value < 99 then
                         Script.Functions.Alert({
                             Title = "Beat Door 200",
-                            Description = "你还没有到达200号门...",
+                            Description = "好像你还没有到达200门...",
                             Time = 5
                         })
 
@@ -3150,12 +3215,12 @@ task.spawn(function()
             })
 
             Mines_AutomationGroupBox:AddToggle("TheMinesAnticheatBypass", {
-                Text = "抗高温 绕过",
+                Text = "防过热旁路",
                 Default = false
             })
         end
 
-        local Mines_BypassGroupBox = Tabs.Floor:AddRightGroupbox("绕过") do
+        local Mines_BypassGroupBox = Tabs.Floor:AddRightGroupbox("旁路") do
             Mines_BypassGroupBox:AddToggle("MinecartTeleport", {
                 Text = "矿车传送",
                 Default = false
@@ -3168,9 +3233,9 @@ task.spawn(function()
             })
         end
         
-        local Mines_VisualGroupBox = Tabs.Floor:AddRightGroupbox("Visuals") do
+        local Mines_VisualGroupBox = Tabs.Floor:AddRightGroupbox("画面") do
             Mines_VisualGroupBox:AddToggle("MinecartPathVisualiser", {
-                Text = "显示正确的矿车路径",
+                Text = "可视化正确的搜索路径",
                 Default = false
             })
         end
@@ -3298,14 +3363,14 @@ task.spawn(function()
             Script.Functions.Minecart.DrawNodes()
         end)
     elseif isBackdoor then
-        local Backdoors_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("Anti-Entity") do
+        local Backdoors_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("防怪物") do
             Backdoors_AntiEntityGroupBox:AddToggle("AntiHasteJumpscare", {
-                Text = "移除Haste Jumpscare",
+                Text = "取消红色骷髅跳脸",
                 Default = false
             })
         end
 
-        local Backdoors_VisualGroupBox = Tabs.Floor:AddRightGroupbox("Visual") do
+        local Backdoors_VisualGroupBox = Tabs.Floor:AddRightGroupbox("视觉") do
             Backdoors_VisualGroupBox:AddToggle("HasteClock", {
                 Text = "显示时钟",
                 Default = true
@@ -3349,20 +3414,20 @@ task.spawn(function()
             end
         end))
     elseif isRooms then
-        local Rooms_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("移除实体") do
+        local Rooms_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("移除怪物") do
             Rooms_AntiEntityGroupBox:AddToggle("AntiA90", {
                 Text = "移除-A90",
                 Default = false
             })
         end
 
-        local Rooms_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("Automation") do
+        local Rooms_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("自动") do
             Rooms_AutomationGroupBox:AddToggle("AutoRooms", {
-                Text = "自动rooms",
+                Text = "自动A1000",
                 Default = false
             })
 
-            Rooms_AutomationGroupBox:AddLabel("推荐设置:\n速度绕过和Noclip禁用", true)
+            Rooms_AutomationGroupBox:AddLabel("Recommended Settings:\nSpeed Bypass and Noclip disabled", true)
 
             Rooms_AutomationGroupBox:AddDivider()
 
@@ -3372,7 +3437,7 @@ task.spawn(function()
             })
             
             Rooms_AutomationGroupBox:AddToggle("ShowAutoRoomsPathNodes", { 
-                Text = "Show Pathfinding Nodes",
+                Text = "显示寻路节点",
                 Default = false
             })
 
@@ -3382,7 +3447,7 @@ task.spawn(function()
             if Toggles.AutoRooms.Value and not value then
                 Script.Functions.Alert({
                     Title = "Auto Rooms",
-                    Description = "自动rooms需要使用防A-90!",
+                    Description = "自动a1000需要防A-90才能工作！",
                     Reason = "反A-90已启用",
                 })
                 
@@ -3503,15 +3568,33 @@ task.spawn(function()
                             if not moveToFinished or not Toggles.AutoRooms.Value then
                                 humanoid:MoveTo(waypoint.Position)
                                 
+                                local entity = (workspace:FindFirstChild("A60") or workspace:FindFirstChild("A120"))
+                                local isEntitySpawned = (entity and entity.PrimaryPart.Position.Y > -10)
+
+                                if isEntitySpawned and not rootPart.Anchored and pathfindingGoal.Parent.Name ~= "Rooms_Locker" then
+                                    waypointConnection:Disconnect()
+
+                                    if not Toggles.AutoRooms.Value then
+                                        _internal_mspaint_pathfinding_nodes:ClearAllChildren()
+                                        break
+                                    else
+                                        if _internal_mspaint_pathfinding_nodes:FindFirstChild("_internal_node_" .. i) then
+                                            _internal_mspaint_pathfinding_nodes:FindFirstChild("_internal_node_" .. i):Destroy()
+                                        end
+                                    end
+
+                                    break
+                                end
+
                                 task.delay(1.5, function()
                                     if moveToFinished then return end
                                     if (not Toggles.AutoRooms.Value or Library.Unloaded) then return moveToCleanup() end
 
-                                    repeat task.wait() until (not character:GetAttribute("Hiding") and not character.PrimaryPart.Anchored)
+                                    repeat task.wait(.25) until (not character:GetAttribute("Hiding") and not character.PrimaryPart.Anchored)
 
                                     Script.Functions.Alert({
                                         Title = "Auto Rooms",
-                                        Description = "你似乎动弹不得了，试图重新计算路径...",
+                                        Description = "你似乎动弹不得，试图重新计算路径...",
                                         Reason = "无法移动到航路点",
                                     })
 
@@ -3548,7 +3631,7 @@ task.spawn(function()
                         Script.Functions.Alert({
                             Title = "Auto Rooms",
                             Description = "你已经到达A-1000",
-                            Reason = "由mspaint 自动Rooms达到的A-1000",
+                            Reason = "到达A-1000 by mspaint 自动Rooms",
                         })
 
                         break
@@ -3563,14 +3646,14 @@ task.spawn(function()
             end
         end)
     elseif isFools then
-        local Fools_TrollingGroupBox = Tabs.Floor:AddLeftGroupbox("Trolling") do
+        local Fools_TrollingGroupBox = Tabs.Floor:AddLeftGroupbox("其余") do
             Fools_TrollingGroupBox:AddToggle("GrabBananaJeffToggle",{
-                Text = "Grab Banana / Jeff",
+                Text = "斥-Banana / Jeff",
                 Default = false
             }):AddKeyPicker("GrabBananaJeff", {
                 Default = "H",
                 Mode = "Hold",
-                Text = "反香蕉/杰夫",
+                Text = "Grab Banana / Jeff",
             })
         
             Fools_TrollingGroupBox:AddLabel("Throw"):AddKeyPicker("ThrowBananaJeff", {
@@ -3622,7 +3705,7 @@ task.spawn(function()
             end
         end
 
-        local Fools_AntiEntityGroupBox = Tabs.Floor:AddRightGroupbox("移除-怪物") do
+        local Fools_AntiEntityGroupBox = Tabs.Floor:AddRightGroupbox("移除") do
             Fools_AntiEntityGroupBox:AddToggle("AntiSeekObstructions", {
                 Text = "移除-Seek 手臂",
                 Default = false
@@ -3634,7 +3717,7 @@ task.spawn(function()
             })
 
             Fools_AntiEntityGroupBox:AddToggle("AntiJeffClient", {
-                Text = "移除-Jeff",
+                Text = "移除-杀手Jeff",
                 Default = false
             })
         end
@@ -3658,7 +3741,7 @@ task.spawn(function()
             })
 
             Fools_BypassGroupBox:AddToggle("FigureGodmodeFools", {
-                Text = "Figure 上帝",
+                Text = "Figure Godmode",
                 Default = false
             })
         end
@@ -3734,7 +3817,7 @@ task.spawn(function()
         end)
 
         Toggles.FigureGodmodeFools:OnChanged(function(value)
-            if value and not Toggles.GodmodeNoclipBypassFools.Value then Toggles.GodmodeNoclipBypassFools:SetValue(true); Script.Functions.Alert({Title = "Figure Godmode", Description = "使用Figure Godmode需要Godmode/Noclip保持开启", Reason = "Godmode/Noclip没有开启！"}) end
+            if value and not Toggles.GodmodeNoclipBypassFools.Value then Toggles.GodmodeNoclipBypassFools:SetValue(true); Script.Functions.Alert({Title = "Figure 上帝模式", Description = "使用Figure Godmode需要上帝模式/穿墙保持开启！", Reason = "上帝模式/穿墙未开启"}) end
             if latestRoom.Value ~= 50 or latestRoom.Value ~= 100 then return end
 
             for _, figure in pairs(workspace.CurrentRooms:GetDescendants()) do
@@ -3991,8 +4074,8 @@ Toggles.FakeRevive:OnChanged(function(value)
 
         Script.Functions.Alert({
             Title = "Fake Revive",
-            Description = "请想办法死去或者等待20秒左右\n来让假死工作.",
-            Reason = "你不会死亡",
+            Description = "请想办法死去或者等待20秒左右\n让假死工作.",
+            Reason = "You are not yet dead",
             Time = 20
         })
         
@@ -4020,7 +4103,7 @@ Toggles.FakeRevive:OnChanged(function(value)
             Script.Functions.Alert({
                 Title = "Fake Revive",
                 Description = "假死已被禁用，无法杀死玩家.",
-                Reason = "你不会死亡",
+                Reason = "你还没有死",
             })
             oxygenModule.Enabled = true
             healthModule.Enabled = true
@@ -4329,7 +4412,7 @@ Toggles.FakeRevive:OnChanged(function(value)
             end
 
             if doStepped ~= false then
-                Library:Notify("You are not longer visible to others because you have lost Network Ownership of your character.", 5);
+                Library:Notify("其他人看不到你，因为你已经失去了你的角色的控制.", 5);
 
                 for _,v in pairs(previewCharacter:GetDescendants()) do
                     if v:IsA("BasePart") then 
@@ -4390,7 +4473,7 @@ Toggles.FakeRevive:OnChanged(function(value)
             end
 
             if not character:FindFirstChild("HumanoidRootPart") then
-                Library:Notify("You have completely lost Network Ownership of your character which resulted of breaking Fake Death.", 5);
+                Library:Notify("你已经完全失去了你的角色的控制，这导致了打破假死.", 5);
                 task.spawn(usePreviewCharacter, false)
                 Script.FakeRevive.Connections["mainStepped"]:Disconnect()
 
@@ -4537,8 +4620,8 @@ Toggles.FakeRevive:OnChanged(function(value)
 
         Script.Functions.Alert({
             Title = "Fake Revive",
-            Description = "Fake Revive is now initialized, have fun!",
-            Reason = 'You are now "dead"',
+            Description = "假死现在初始化，玩得开心!",
+            Reason = '你现在 "死了"',
         })
     end
 end)
@@ -4638,7 +4721,7 @@ Toggles.ItemESP:OnChanged(function(value)
     if value then
         for _, item in pairs(workspace.Drops:GetChildren()) do
             if Script.Functions.ItemCondition(item) then
-                Script.Functions.ItemESP(item)
+                Script.Functions.ItemESP(item, true)
             end
         end
 
@@ -4651,6 +4734,10 @@ Toggles.ItemESP:OnChanged(function(value)
             end
         end
     else
+        for _, esp in pairs(Script.ESPTable.DroppedItem) do
+            esp.Destroy()
+        end
+
         for _, esp in pairs(Script.ESPTable.Item) do
             esp.Destroy()
         end
@@ -4658,6 +4745,14 @@ Toggles.ItemESP:OnChanged(function(value)
 end)
 
 Options.ItemEspColor:OnChanged(function(value)
+    for _, esp in pairs(Script.ESPTable.DroppedItem) do
+        esp.Update({
+            FillColor = value,
+            OutlineColor = value,
+            TextColor = value,
+        })
+    end
+
     for _, esp in pairs(Script.ESPTable.Item) do
         esp.Update({
             FillColor = value,
@@ -5004,8 +5099,8 @@ if isBackdoor then
             end
 
             Script.Functions.Alert({
-                Title = "ENTITIES",
-                Description = "时间快到了，请尽快找个杠杆！！！",
+                Title = "警告",
+                Description = "Haste 快要出现了，请尽快找一个拉杆!",
                 Time = haste_incoming_progress,
 
                 Warning = true
@@ -5021,6 +5116,27 @@ if isBackdoor then
     end))
 end
 
+Library:GiveSignal(remotesFolder.HideMonster.OnClientEvent:Connect(function()
+    if isBackdoor or isRooms or isRetro then return end
+
+    local hideTime = Script.Functions.CalculateHideTime(currentRoom) or math.huge
+    local finalTime = tick() + math.round(hideTime)
+
+    if Toggles.NotifyHideTime.Value and hideTime ~= math.huge then
+        while character:GetAttribute("Hiding") and alive and not Library.Unloaded and Toggles.NotifyHideTime.Value do
+            local remainingTime = math.max(0, finalTime - tick())
+
+            if ExecutorSupport["firesignal"] then
+                firesignal(remotesFolder.Caption.OnClientEvent, string.format("%.1f", remainingTime))
+            else
+                Script.Functions.Captions(string.format("%.1f", remainingTime))
+            end
+
+            task.wait()
+        end
+    end
+end))
+
 Library:GiveSignal(ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
     if player ~= localPlayer or not character or isFools then return end
     
@@ -5034,7 +5150,7 @@ Library:GiveSignal(ProximityPromptService.PromptTriggered:Connect(function(promp
         local toolId = equippedTool and equippedTool:GetAttribute("ID")
 
         if Toggles.InfItems.Value and equippedTool and equippedTool:GetAttribute("UniversalKey") then
-            task.wait(isChestBox and 0.15 or 0)
+            task.wait(isChestBox and 0.05 or 0)
             remotesFolder.DropItem:FireServer(equippedTool)
 
             task.spawn(function()
@@ -5102,27 +5218,27 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
                         Script.Functions.EntityESP(child)  
                     end
 
-                    if Options.NotifyEntity.Value[shortName] == true then
+                    if Options.NotifyEntity.Value[shortName] then
                         Script.Functions.Alert({
-                            Title = "ENTITIES",
-                            Description = shortName .. " 怪物生成，请尽快寻找位置或者柜子等地方进行躲藏",
-                            Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "去找个藏身之处! lol" or nil),
+                            Title = "警告",
+                            Description = shortName .. " 怪物生成了！",
+                            Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "去寻找一个藏身的地方!" or nil),
                             Image = EntityTable.NotifyReason[child.Name].Image,
 
                             Warning = true
                         })
 
                         if Toggles.NotifyChat.Value then
-                            RBXGeneral:SendAsync(shortName .. " 怪物生成，请尽快寻找位置或者柜子等地方进行躲藏")
+                            RBXGeneral:SendAsync(shortName .. " 怪物出现！！!")
                         end
                     end
                 end
             end)
         elseif EntityTable.NotifyMessage[child.Name] and Options.NotifyEntity.Value[shortName] then
             Script.Functions.Alert({
-                Title = "ENTITIES",
-                Description = shortName .. " 怪物生成，请尽快寻找位置或者柜子等地方进行躲藏",
-                Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "寻找躲藏的地方" or nil),
+                Title = "警告",
+                Description = shortName .. " 怪物刷新",
+                Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "去寻找一个藏身的地方!" or nil),
                 Image = EntityTable.NotifyReason[child.Name].Image,
 
                 Warning = true
@@ -5154,7 +5270,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
             end
         end
 
-        if (child.Name == "RushMoving" or child.Name == "AmbushMoving") and Toggles.InfItems.Value and alive and character then
+        if (child.Name == "RushMoving" or child.Name == "AmbushMoving") and Toggles.InfCrucifix.Value and alive and character then
             task.wait(1.5)
             
             local hasStoppedMoving = false --entity has stoped
@@ -5175,7 +5291,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
             local entityName = child.Name
 
             local crucifixConnection; crucifixConnection = RunService.RenderStepped:Connect(function(deltaTime)
-                if not Toggles.InfItems.Value or not alive or not character then crucifixConnection:Disconnect() return end
+                if not Toggles.InfCrucifix.Value or not alive or not character then crucifixConnection:Disconnect() return end
 
                 local currentTimer = tick()
                 frameCount += 1 
@@ -5326,9 +5442,9 @@ Library:GiveSignal(localPlayer.CharacterAdded:Connect(function(newCharacter)
             Script.Functions.Alert({
                 Title = "Fake Revive",
                 Description = "你复活了，假死已经不起作用了.",
-                Reason = "再次启用它来启动假活",
+                Reason = "再次启用它来启动假死",
 
-                LinoriaMessage = "伪恢复已停止工作，请再次启用它来启动伪恢复",
+                LinoriaMessage = "伪活已停止工作，请再次启用它来启动伪活",
             })
             Toggles.FakeRevive:SetValue(false)
         end
@@ -5374,10 +5490,10 @@ Library:GiveSignal(localPlayer:GetAttributeChangedSignal("CurrentRoom"):Connect(
         bypassed = false
         Script.Functions.Alert({
             Title = "Anticheat Bypass",
-            Description = "停机防破坏旁路.",
-            Reason = "请再爬一次梯子来修理它",
+            Description = "Halt 已断开防旁路.",
+            Reason = "请再爬一次梯子来修理它.",
 
-            LinoriaMessage = "停机时防热旁路坏了，请再登上梯子修理.",
+            LinoriaMessage = "Halt 防路坏了，请再爬一次梯子来修理.",
         })
 
         Options.SpeedSlider:SetMax(Toggles.SpeedBypass.Value and 45 or (Toggles.EnableJump.Value and 3 or 7))
@@ -5659,7 +5775,6 @@ Library:GiveSignal(RunService.RenderStepped:Connect(function()
                 if prompt.Parent:GetAttribute("JeffShop") then continue end
                 if prompt.Parent:GetAttribute("PropType") == "Battery" and ((character:FindFirstChildOfClass("Tool") and character:FindFirstChildOfClass("Tool"):GetAttribute("RechargeProp") ~= "Battery") or character:FindFirstChildOfClass("Tool") == nil) then continue end 
                 if prompt.Parent:GetAttribute("PropType") == "Heal" and humanoid and humanoid.Health == humanoid.MaxHealth then continue end
-                if prompt:FindFirstAncestorOfClass("Model") and prompt:FindFirstAncestorOfClass("Model").Name == "DoorFake" then continue end
 
                 task.spawn(function()
                     -- checks if distance can interact with prompt and if prompt can be interacted again
@@ -5738,8 +5853,8 @@ Library:GiveSignal(RunService.RenderStepped:Connect(function()
                         if result then
                             Script.Functions.Alert({
                                 Title = "Auto Anchor Solver",
-                                Description = "解锚 " .. CurrentAnchor .. " 成功！!",
-                                Reason = "用数解决锚 " .. CurrentGameState.AnchorCode,
+                                Description = "解锚 " .. CurrentAnchor .. " 成功!",
+                                Reason = "用密码解决锚 " .. CurrentGameState.AnchorCode,
                             })
                         end
                     end)
@@ -5752,7 +5867,7 @@ Library:GiveSignal(RunService.RenderStepped:Connect(function()
             if HoldingItem and not isnetowner(HoldingItem) then
                 Script.Functions.Alert({
                     Title = "Banana/Jeff Throw",
-                    Description = "由于网络所有者发生变化，你不再持有该物品!",
+                    Description = "由于所有者发生变化，你不再持有该物品!",
                 })
                 Script.Temp.HoldingItem = nil
             end
@@ -5968,32 +6083,39 @@ Library:OnUnload(function()
     getgenv().mspaint_loaded = false
 end)
 
-local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
+local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("其余")
 local CreditsGroup = Tabs["UI Settings"]:AddRightGroupbox("Credits")
 
-MenuGroup:AddToggle("ExecuteOnTeleport", { Default = false, Text = "Execute on Teleport", Visible = ExecutorSupport["queue_on_teleport"] })
+MenuGroup:AddToggle("ExecuteOnTeleport", { Default = false, Text = "传送时执行", Visible = ExecutorSupport["queue_on_teleport"] })
 MenuGroup:AddToggle("KeybindMenuOpen", { Default = false, Text = "打开 Keybind 菜单", Callback = function(value) Library.KeybindFrame.Visible = value end})
-MenuGroup:AddToggle("ShowCustomCursor", {Text = "Custom Cursor", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
+MenuGroup:AddToggle("ShowCustomCursor", {Text = "自定义光标", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
 MenuGroup:AddDivider()
 MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
-MenuGroup:AddButton("加入MS作者DC", function()
+MenuGroup:AddButton("加入 Discord", function()
     local Inviter = loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Discord%20Inviter/Source.lua"))()
     Inviter.Join("https://discord.com/invite/cfyMptntHr")
     Inviter.Prompt({
         name = "mspaint",
         invite = "https://discord.com/invite/cfyMptntHr",
     })
+end):AddButton("复制 Link", function()
+    if setclipboard then
+        setclipboard("https://discord.com/invite/cfyMptntHr")
+        Library:Notify("Copied discord link to clipboard!")
+    else
+        Library:Notify("Discord link: https://discord.com/invite/cfyMptntHr", 10)
+    end
 end)
-MenuGroup:AddButton("Unload", function() Library:Unload() end)
+MenuGroup:AddButton("倾销", function() Library:Unload() end)
 
 CreditsGroup:AddLabel("开发商:")
 CreditsGroup:AddLabel("upio -所有者")
 CreditsGroup:AddLabel("主脚本开发")
 CreditsGroup:AddLabel("mstudio45")
 CreditsGroup:AddLabel("bacalhauz")
-CreditsGroup:AddLabel("汉化小玄奘")
-CreditsGroup:AddLabel("辅汉:du8")
-CreditsGroup:AddLabel("XSKil汉化ms付费高级版")
+CreditsGroup:AddLabel("汉化作者:小玄奘")
+CreditsGroup:AddLabel("修复辅助:du8")
+CreditsGroup:AddLabel("参与者:lolyex")
 
 Library.ToggleKeybind = Options.MenuKeybind
 
