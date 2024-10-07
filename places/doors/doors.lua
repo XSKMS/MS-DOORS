@@ -165,7 +165,7 @@ local EntityTable = {
         ["JeffTheKiller"] = "Jeff The Killer"
     },
     ["NotifyMessage"] = {
-        ["GloombatSwarm"] = "Gloombats 将在下一扇门出现!"
+        ["GloombatSwarm"] = "Gloombats in next room!"
     },
     ["Avoid"] = {
         "RushMoving",
@@ -465,7 +465,7 @@ local Toggles = getgenv().Linoria.Toggles
 local ESPLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/mstudio45/MS-ESP/refs/heads/main/source.lua"))()
 
 local Window = Library:CreateWindow({
-    Title = "mspaint v2 汉化版 | DOORS | 3.0 ",
+    Title = "mspaint v2 汉化版 | DOORS |测试版3.0.1",
     Center = true,
     AutoShow = true,
     Resizable = true,
@@ -614,7 +614,7 @@ do
     end
 
     function Script.Functions.Notifs.Doors.Notify(unsafeOptions)
-        assert(typeof(unsafeOptions) == "table", "需要一个表作为选项参数，但得到的是 " .. typeof(unsafeOptions))
+        assert(typeof(unsafeOptions) == "table", "Expected a table as options argument but got " .. typeof(unsafeOptions))
         if not mainUI then return end
         
         local options = Script.Functions.EnforceTypes(unsafeOptions, {
@@ -693,7 +693,7 @@ do
     end
     
     function Script.Functions.Notifs.Doors.Warn(options)
-        assert(typeof(options) == "table", "需要一个表作为选项参数，但得到的是 " .. typeof(options))
+        assert(typeof(options) == "table", "Expected a table as options argument but got " .. typeof(options))
     
         options["NotificationType"] = "WARNING"
         options["Color"] = Color3.new(1, 0, 0)
@@ -1271,7 +1271,7 @@ do
     end
 
     function Script.Functions.GetAllPromptsWithCondition(condition)
-        assert(typeof(condition) == "function", "需要一个函数作为条件参数，但得到了 " .. typeof(condition))
+        assert(typeof(condition) == "function", "Expected a function as condition argument but got " .. typeof(condition))
         
         local validPrompts = {}
         for _, prompt in pairs(PromptTable.GamePrompts) do
@@ -1281,8 +1281,8 @@ do
                 return condition(prompt)
             end)
     
-            assert(success, "运行条件函数时出错.\n" .. tostring(returnData))
-            assert(typeof(returnData) == "布尔", "期望条件函数返回布尔值")
+            assert(success, "An error has occured while running condition function.\n" .. tostring(returnData))
+            assert(typeof(returnData) == "boolean", "Expected condition function to return a boolean")
             
             if returnData then
                 table.insert(validPrompts, prompt)
@@ -1344,7 +1344,7 @@ do
             if collision:IsDescendantOf(workspace) and (collision.Parent and collision.Parent.Name == "TriggerEventCollision") then
                 Script.Functions.Alert({
                     Title = "Delete Seek FE",
-                    Description = "删除Seek...",
+                    Description = "Deleting Seek trigger...",
                     Reason = "",
                 })
     
@@ -1352,7 +1352,7 @@ do
                     if collision:IsDescendantOf(workspace) then
                         Script.Functions.Alert({
                             Title = "Delete Seek FE",
-                            Description = "Seek已删除!",
+                            Description = "Failed to delete Seek trigger!",
                             Reason = "",
                         })
                     end
@@ -1378,7 +1378,7 @@ do
                 if not collision:IsDescendantOf(workspace) then
                     Script.Functions.Log({
                         Title = "Delete Seek FE",
-                        Description = "移除Seek成功!",
+                        Description = "Deleted Seek trigger successfully!",
                     })
                 end
             end
@@ -1434,9 +1434,9 @@ do
         task.spawn(function() 
             Script.Functions.Log({
                 Title = NotifPrefix,
-                Description = "寻找柜子",
+                Description = "Looking for a hiding place",
         
-                LinoriaMessage = "[" .. NotifPrefix .. "] 寻找柜子..."
+                LinoriaMessage = "[" .. NotifPrefix .. "] Looking for a hiding spot..."
             }, Toggles.AutoWardrobeNotif.Value)
         end)
     
@@ -1476,9 +1476,9 @@ do
         task.spawn(function() 
             Script.Functions.Log({
                 Title = NotifPrefix,
-                Description = "开始...",
+                Description = "Starting...",
         
-                LinoriaMessage = "[" .. NotifPrefix .. "] 开始..."
+                LinoriaMessage = "[" .. NotifPrefix .. "] Starting..."
             }, Toggles.AutoWardrobeNotif.Value)
         end)
         
@@ -1523,9 +1523,9 @@ do
                         task.spawn(function() 
                             Script.Functions.Log({
                                 Title = NotifPrefix,
-                                Description = "退出柜子，怪物远离.",
+                                Description = "Exiting the locker, entity is far away.",
                                 
-                                LinoriaMessage = "[" .. NotifPrefix .. "] 退出柜子，怪物远离."
+                                LinoriaMessage = "[" .. NotifPrefix .. "] Exiting the locker, entity is far away."
                             }, Toggles.AutoWardrobeNotif.Value)
                         end)
     
@@ -1535,9 +1535,9 @@ do
                             task.spawn(function() 
                                 Script.Functions.Log({
                                     Title = NotifPrefix,
-                                    Description = "退出时，实体被删除.",
+                                    Description = "Exiting the locker, entity is deleted.",
                                     
-                                    LinoriaMessage = "[" .. NotifPrefix .. "] 退出锁定程序时，实体被删除."
+                                    LinoriaMessage = "[" .. NotifPrefix .. "] Exiting the locker, entity is deleted."
                                 }, Toggles.AutoWardrobeNotif.Value)
                             end)
     
@@ -1546,13 +1546,13 @@ do
                     end
     
                     if not alive then  
-                        if Toggles.AutoWardrobeNotif.Value then Script.Functions.Log("[" .. NotifPrefix .. "] 停止(你死了).") end             
+                        if Toggles.AutoWardrobeNotif.Value then Script.Functions.Log("[" .. NotifPrefix .. "] Stopping (you died).") end             
                         task.spawn(function() 
                             Script.Functions.Log({
                                 Title = NotifPrefix,
-                                Description = "停止(你死了)",
+                                Description = "Stopping (you died)",
                                 
-                                LinoriaMessage = "[" .. NotifPrefix .. "] 停止(你死了)."
+                                LinoriaMessage = "[" .. NotifPrefix .. "] Stopping (you died)."
                             }, Toggles.AutoWardrobeNotif.Value)
                         end)
 
@@ -1592,9 +1592,9 @@ do
                 task.spawn(function() 
                     Script.Functions.Log({
                         Title = NotifPrefix,
-                        Description = "等待Ambush足够近...",
+                        Description = "Waiting for Ambush to be close enough...",
         
-                        LinoriaMessage = "[" .. NotifPrefix .. "] 等待Ambush足够近...",
+                        LinoriaMessage = "[" .. NotifPrefix .. "] Waiting for Ambush to be close enough...",
                     }, Toggles.AutoWardrobeNotif.Value)
                 end)
     
@@ -1606,9 +1606,9 @@ do
                     task.spawn(function() 
                         Script.Functions.Log({
                             Title = NotifPrefix,
-                            Description = "等待它安全退出...",
+                            Description = "Waiting for it to be safe to exit...",
         
-                            LinoriaMessage = "[" .. NotifPrefix .. "] 等待它安全退出...",
+                            LinoriaMessage = "[" .. NotifPrefix .. "] Waiting for it to be safe to exit...",
                         }, Toggles.AutoWardrobeNotif.Value)
                     end)
     
@@ -1637,9 +1637,9 @@ do
         task.spawn(function() 
             Script.Functions.Log({
                 Title = NotifPrefix,
-                Description = "完成.",
+                Description = "Finished.",
         
-                LinoriaMessage = "[" .. NotifPrefix .. "] 完成.",
+                LinoriaMessage = "[" .. NotifPrefix .. "] Finished.",
             }, Toggles.AutoWardrobeNotif.Value)
         end)
     end
@@ -1673,7 +1673,7 @@ do
     
         Script.Functions.Alert({
             Title = "Auto Breaker Solver",
-            Description = "解决断路器盒...",
+            Description = "Solving the breaker box...",
             Reason = ""
         })
     
@@ -1708,7 +1708,7 @@ do
     
             Script.Functions.Alert({
                 Title = "Auto Breaker Solver",
-                Description = "断路器已成功解决.",
+                Description = "The breaker box has been successfully solved.",
             })
         end
     end
@@ -2038,7 +2038,7 @@ do
                 end
                 Script.Functions.Alert({
                     Title = "Minecart Teleport",
-                    Description = "矿车传送准备好了！等待矿车...",
+                    Description = "Minecart teleport is ready! Waiting for the minecart...",
     
                     Time = progressPart
                 })
@@ -2127,8 +2127,8 @@ do
     function Script.Functions.SetupRoomConnection(room)
         if Options.NotifyEntity.Value["Halt Room"] and room:GetAttribute("RawName") == "HaltHallway" then
             Script.Functions.Alert({
-                Title = "警告",
-                Description = "Halt 将在下一扇门生成!",
+                Title = "ENTITIES",
+                Description = "Halt will spawn in next room!",
                 Image = EntityTable.NotifyReason["HaltRoom"].Image,
 
                 Warning = true
@@ -2195,7 +2195,7 @@ do
                     if Toggles.NotifyPadlock.Value and count < 5 then
                         Script.Functions.Alert({
                             Title = "Library Code",
-                            Description = string.format("图书馆密码: %s", output),
+                            Description = string.format("Library Code: %s", output),
                         })
     
                         if Toggles.NotifyChat.Value and count == 0 then
@@ -2348,7 +2348,7 @@ do
     
                         Script.Functions.Alert({
                             Title = "Lagback Detection",
-                            Description = "固定滞后...",
+                            Description = "Fixing Lagback...",
                         })
                         Toggles.SpeedBypass:SetValue(false)
                         local cframeChanged = false
@@ -2364,7 +2364,7 @@ do
                         Script.Lagback.Detected = false
                         Script.Functions.Alert({
                             Title = "Lagback Detection",
-                            Description = "固定滞后!"
+                            Description = "Fixed Lagback!"
                         })
                     end
                 end
@@ -2406,10 +2406,10 @@ do
     
                         Script.Functions.Alert({
                             Title = "Anticheat Bypass",
-                            Description = "成功绕过了!",
-                            Reason = "这只会持续到下一个过场动画!",
+                            Description = "Bypassed the anticheat successfully!",
+                            Reason = "This will only last until the next cutscene!",
     
-                            LinoriaMessage = "成功绕过！这只会持续到下一个过场动画",
+                            LinoriaMessage = "Bypassed the anticheat successfully! This will only last until the next cutscene",
     
                             Time = 7
                         })
@@ -2452,8 +2452,8 @@ do
                     if Toggles.NotifyPadlock.Value and count < 5 then
                         Script.Functions.Alert({
                             Title = "Padlock Code",
-                            Description = string.format("图书馆密码: %s", output),
-                            Reason = (tonumber(code) and "解开了图书馆的挂锁密码" or "你仍然缺少一些书"),
+                            Description = string.format("Library Code: %s", output),
+                            Reason = (tonumber(code) and "Solved the library padlock code" or "You are still missing some books"),
                         })
     
                         if Toggles.NotifyChat.Value and count == 0 then
@@ -2558,9 +2558,9 @@ local ReachGroupBox = Tabs.Main:AddLeftGroupbox("远程") do
     })
 end
 
-local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
+local AutomationGroupBox = Tabs.Main:AddRightGroupbox("自动类") do
     AutomationGroupBox:AddToggle("AutoInteract", {
-        Text = "自动互动【修复】",
+        Text = "自动互动",
         Default = false
     }):AddKeyPicker("AutoInteractKey", {
         Mode = Library.IsMobile and "Toggle" or "Hold",
@@ -2652,7 +2652,7 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
         end)
     elseif isMines then
         AutomationGroupBox:AddToggle("AutoAnchorSolver", {
-            Text = "自动锚点解算",
+            Text = "Auto Anchor Solver",
             Default = false
         })
     end
@@ -2698,7 +2698,7 @@ local AntiEntityGroupBox = Tabs.Exploits:AddLeftGroupbox("移除怪物") do
     })
 
     AntiEntityGroupBox:AddToggle("AntiDupe", {
-        Text = "移除-" .. (isBackdoor and "Backdoor真空门" or "假门"),
+        Text = "移除-" .. (isBackdoor and "什么" or "假门"),
         Default = false
     })
 
@@ -2736,7 +2736,7 @@ local TrollingGroupBox = Tabs.Exploits:AddLeftGroupbox("整蛊") do
     })
 end
 
-local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("速度绕过") do
+local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("绕过") do
     BypassGroupBox:AddDropdown("SpeedBypassMethod", {
         AllowNull = false,
         Values = {"Massless", --[["Size"]]},
@@ -2777,7 +2777,7 @@ local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("速度绕过") do
         Text = "无限十字架！",
         Default = false,
         Visible = not isFools,
-        Tooltip = "非常冒险lol你可能会死/丢失十字架 :p",
+        Tooltip = "Very risky, you might die/lose the crucifix",
         Risky = true
     })
 
@@ -2863,7 +2863,7 @@ local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
         })
     end
 
-    local ESPSettingsTab = ESPTabBox:AddTab("Settings") do
+    local ESPSettingsTab = ESPTabBox:AddTab("设置") do
         ESPSettingsTab:AddToggle("ESPHighlight", {
             Text = "显示轮廓",
             Default = true,
@@ -2921,7 +2921,7 @@ end
 
 local AmbientGroupBox = Tabs.Visuals:AddLeftGroupbox("环境") do
     AmbientGroupBox:AddSlider("Brightness", {
-        Text = "高亮亮度调节",
+        Text = "黑处亮度调节",
         Default = 0,
         Min = 0,
         Max = 3,
@@ -2971,7 +2971,7 @@ local NotifyTabBox = Tabs.Visuals:AddRightTabbox() do
         })
     end
 
-    local NotifySettingsTab = NotifyTabBox:AddTab("通知设置") do
+    local NotifySettingsTab = NotifyTabBox:AddTab("设置必看") do
         NotifySettingsTab:AddToggle("NotifyChat", {
             Text = "聊天通知",
             Tooltip = "Entity and Padlock Code",
@@ -3005,7 +3005,7 @@ local NotifyTabBox = Tabs.Visuals:AddRightTabbox() do
     end
 end
 
-local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("自己的") do
+local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("自己") do
     SelfGroupBox:AddToggle("ThirdPerson", {
         Text = "第三人称",
         Default = false
@@ -3053,7 +3053,7 @@ end
 --// Floor \\--
 task.spawn(function()
     if isHotel then
-        local Hotel_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("移除&绕过&躲避") do
+        local Hotel_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("防-怪物") do
             Hotel_AntiEntityGroupBox:AddToggle("AntiSeekObstructions", {
                 Text = "移除-Seek 手臂",
                 Default = false
@@ -3063,13 +3063,13 @@ task.spawn(function()
         local Hotel_BypassGroupBox = Tabs.Floor:AddLeftGroupbox("绕过") do
             Hotel_BypassGroupBox:AddToggle("AvoidRushAmbush", {
                 Text = "无视 Rush/Ambush",
-                Tooltip = "温室无法使用 :( idklolol",
+                Tooltip = "温室无法使用 :(",
                 Default = false,
                 Risky = true
             })
         end
 
-        local Hotel_ModifiersGroupBox = Tabs.Floor:AddRightGroupbox("修饰") do
+        local Hotel_ModifiersGroupBox = Tabs.Floor:AddRightGroupbox("修饰符") do
             Hotel_ModifiersGroupBox:AddToggle("AntiA90", {
                 Text = "移除-A90",
                 Default = false
@@ -3112,7 +3112,7 @@ task.spawn(function()
             if jamminEffect then jamminEffect.Enabled = not value end
         end)
     elseif isMines then
-        local Mines_MovementGroupBox = Tabs.Floor:AddLeftGroupbox("F2修饰绕过") do
+        local Mines_MovementGroupBox = Tabs.Floor:AddLeftGroupbox("floor功能") do
             Mines_MovementGroupBox:AddToggle("FastLadder", {
                 Text = "快速梯子",
                 Default = false
@@ -3144,7 +3144,7 @@ task.spawn(function()
             })
         end
 
-        local Mines_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("自动化") do
+        local Mines_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("自动") do
             Mines_AutomationGroupBox:AddButton({
                 Text = "自动200水泵",
                 Func = function()
@@ -3252,19 +3252,19 @@ task.spawn(function()
                 if Library.IsMobile then
                     Script.Functions.Alert({
                         Title = "Anticheat bypass",
-                        Description = "要绕过，你必须与梯子互动.",
-                        Reason = "梯子ESP已启用，不要在梯子上移动.",
+                        Description = "To bypass the ac, you must interact with a ladder.",
+                        Reason = "Ladder ESP has been enabled, do not move while on the ladder.",
 
-                        LinoriaMessage = "要绕过，你必须与梯子互动。阶梯ESP已启用.\n在梯子上时不要移动.",
+                        LinoriaMessage = "To bypass the anticheat, you must interact with a ladder. Ladder ESP has been enabled.\nDo not move while on the ladder.",
                         Time = progressPart
                     })
                 else
                     Script.Functions.Alert({
                         Title = "Anticheat bypass",
-                        Description = "要绕过，你必须与梯子互动.",
-                        Reason = "梯子ESP已启用，不要在梯子上移动.",
+                        Description = "To bypass the ac, you must interact with a ladder.",
+                        Reason = "Ladder ESP has been enabled, do not move while on the ladder.",
 
-                        LinoriaMessage = "要绕过，你必须与梯子互动。阶梯ESP已启用.\n在梯子上时不要移动.",
+                        LinoriaMessage = "To bypass the anticheat, you must interact with a ladder. Ladder ESP has been enabled.\nDo not move while on the ladder.",
                         Time = progressPart
                     })
                 end
@@ -3521,7 +3521,7 @@ task.spawn(function()
 
                     Script.Functions.Log({
                         Title = "Auto Rooms",
-                        Description = "成功计算目标!\n目标: " .. pathfindingGoal.Parent.Name .. "\n创建路径...",
+                        Description = "Calculated Objective Successfully!\nObjective: " .. pathfindingGoal.Parent.Name .. "\nCreating path...",
                     }, Toggles.AutoRoomsDebug.Value)
 
                     local path = PathfindingService:CreatePath({
@@ -3533,7 +3533,7 @@ task.spawn(function()
 
                     Script.Functions.Log({
                         Title = "Auto Rooms",
-                        Description = "计算到的路径 " .. pathfindingGoal.Parent.Name .. "...",
+                        Description = "Computing Path to " .. pathfindingGoal.Parent.Name .. "...",
                     }, Toggles.AutoRoomsDebug.Value)
 
                     path:ComputeAsync(rootPart.Position - Vector3.new(0, 2.5, 0), pathfindingGoal.Position)
@@ -3542,7 +3542,7 @@ task.spawn(function()
                     if path.Status == Enum.PathStatus.Success then
                         Script.Functions.Log({
                             Title = "Auto Rooms",
-                            Description = "使用成功计算路径 " .. #waypoints .. " 航点!",
+                            Description = "Computed path successfully with " .. #waypoints .. " waypoints!",
                         }, Toggles.AutoRoomsDebug.Value)
 
                         _internal_mspaint_pathfinding_nodes:ClearAllChildren()
@@ -3594,7 +3594,7 @@ task.spawn(function()
 
                                     Script.Functions.Alert({
                                         Title = "Auto Rooms",
-                                        Description = "你似乎动弹不得，试图重新计算路径...",
+                                        Description = "似乎你被困住了，试图重新计算路径...",
                                         Reason = "无法移动到航路点",
                                     })
 
@@ -3620,7 +3620,7 @@ task.spawn(function()
                     else
                         Script.Functions.Log({
                             Title = "Auto Rooms",
-                            Description = "寻路失败，状态为 " .. tostring(path.Status)   
+                            Description = "Pathfinding failed with status " .. tostring(path.Status)   
                         }, Toggles.AutoRoomsDebug.Value)
                     end
                 end
@@ -3631,7 +3631,7 @@ task.spawn(function()
                         Script.Functions.Alert({
                             Title = "Auto Rooms",
                             Description = "你已经到达A-1000",
-                            Reason = "到达A-1000 by mspaint 自动Rooms",
+                            Reason = "A-1000 reached by mspaint autorooms",
                         })
 
                         break
@@ -3648,7 +3648,7 @@ task.spawn(function()
     elseif isFools then
         local Fools_TrollingGroupBox = Tabs.Floor:AddLeftGroupbox("其余") do
             Fools_TrollingGroupBox:AddToggle("GrabBananaJeffToggle",{
-                Text = "斥-Banana / Jeff",
+                Text = "夺取 Banana / Jeff",
                 Default = false
             }):AddKeyPicker("GrabBananaJeff", {
                 Default = "H",
@@ -3705,7 +3705,7 @@ task.spawn(function()
             end
         end
 
-        local Fools_AntiEntityGroupBox = Tabs.Floor:AddRightGroupbox("移除") do
+        local Fools_AntiEntityGroupBox = Tabs.Floor:AddRightGroupbox("Anti-Entity") do
             Fools_AntiEntityGroupBox:AddToggle("AntiSeekObstructions", {
                 Text = "移除-Seek 手臂",
                 Default = false
@@ -3741,7 +3741,7 @@ task.spawn(function()
             })
 
             Fools_BypassGroupBox:AddToggle("FigureGodmodeFools", {
-                Text = "Figure Godmode",
+                Text = "饰 Godmode",
                 Default = false
             })
         end
@@ -3817,7 +3817,7 @@ task.spawn(function()
         end)
 
         Toggles.FigureGodmodeFools:OnChanged(function(value)
-            if value and not Toggles.GodmodeNoclipBypassFools.Value then Toggles.GodmodeNoclipBypassFools:SetValue(true); Script.Functions.Alert({Title = "Figure 上帝模式", Description = "使用Figure Godmode需要上帝模式/穿墙保持开启！", Reason = "上帝模式/穿墙未开启"}) end
+            if value and not Toggles.GodmodeNoclipBypassFools.Value then Toggles.GodmodeNoclipBypassFools:SetValue(true); Script.Functions.Alert({Title = "Figure Godmode", Description = "Godmode/Noclip Bypass is required to use figure godmode", Reason = "Godmode/Noclip Bypass not enabled"}) end
             if latestRoom.Value ~= 50 or latestRoom.Value ~= 100 then return end
 
             for _, figure in pairs(workspace.CurrentRooms:GetDescendants()) do
@@ -4074,7 +4074,7 @@ Toggles.FakeRevive:OnChanged(function(value)
 
         Script.Functions.Alert({
             Title = "Fake Revive",
-            Description = "请想办法死去或者等待20秒左右\n让假死工作.",
+            Description = "Please find a way to die or wait for around 20 seconds\nfor fake revive to work.",
             Reason = "You are not yet dead",
             Time = 20
         })
@@ -4102,8 +4102,8 @@ Toggles.FakeRevive:OnChanged(function(value)
             remotesFolder.Underwater:FireServer(false)
             Script.Functions.Alert({
                 Title = "Fake Revive",
-                Description = "假死已被禁用，无法杀死玩家.",
-                Reason = "你还没有死",
+                Description = "Fake revive has been disabled, was unable to kill player.",
+                Reason = "You are not yet dead",
             })
             oxygenModule.Enabled = true
             healthModule.Enabled = true
@@ -4412,7 +4412,7 @@ Toggles.FakeRevive:OnChanged(function(value)
             end
 
             if doStepped ~= false then
-                Library:Notify("其他人看不到你，因为你已经失去了你的角色的控制.", 5);
+                Library:Notify("You are not longer visible to others because you have lost Network Ownership of your character.", 5);
 
                 for _,v in pairs(previewCharacter:GetDescendants()) do
                     if v:IsA("BasePart") then 
@@ -4473,7 +4473,7 @@ Toggles.FakeRevive:OnChanged(function(value)
             end
 
             if not character:FindFirstChild("HumanoidRootPart") then
-                Library:Notify("你已经完全失去了你的角色的控制，这导致了打破假死.", 5);
+                Library:Notify("You have completely lost Network Ownership of your character which resulted of breaking Fake Death.", 5);
                 task.spawn(usePreviewCharacter, false)
                 Script.FakeRevive.Connections["mainStepped"]:Disconnect()
 
@@ -4620,8 +4620,8 @@ Toggles.FakeRevive:OnChanged(function(value)
 
         Script.Functions.Alert({
             Title = "Fake Revive",
-            Description = "假死现在初始化，玩得开心!",
-            Reason = '你现在 "死了"',
+            Description = "Fake Revive is now initialized, have fun!",
+            Reason = 'You are now "dead"',
         })
     end
 end)
@@ -5099,8 +5099,8 @@ if isBackdoor then
             end
 
             Script.Functions.Alert({
-                Title = "警告",
-                Description = "Haste 快要出现了，请尽快找一个拉杆!",
+                Title = "ENTITIES",
+                Description = "Haste is incoming, please find a lever ASAP!",
                 Time = haste_incoming_progress,
 
                 Warning = true
@@ -5218,10 +5218,10 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
                         Script.Functions.EntityESP(child)  
                     end
 
-                    if Options.NotifyEntity.Value[shortName] == true then
+                    if Options.NotifyEntity.Value[shortName] then
                         Script.Functions.Alert({
                             Title = "ENTITIES",
-                            Description = shortName .. " has spawned!",
+                            Description = shortName .. " 怪物生成了！",
                             Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "Go find a hiding place!" or nil),
                             Image = EntityTable.NotifyReason[child.Name].Image,
 
@@ -5229,7 +5229,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
                         })
 
                         if Toggles.NotifyChat.Value then
-                            RBXGeneral:SendAsync(shortName .. " has spawned!")
+                            RBXGeneral:SendAsync(shortName .. " 怪物出现！！!")
                         end
                     end
                 end
@@ -5237,7 +5237,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
         elseif EntityTable.NotifyMessage[child.Name] and Options.NotifyEntity.Value[shortName] then
             Script.Functions.Alert({
                 Title = "ENTITIES",
-                Description = shortName .. " has spawned!",
+                Description = shortName .. " 怪物刷新",
                 Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "Go find a hiding place!" or nil),
                 Image = EntityTable.NotifyReason[child.Name].Image,
 
@@ -5441,10 +5441,10 @@ Library:GiveSignal(localPlayer.CharacterAdded:Connect(function(newCharacter)
         if Toggles.FakeRevive.Value then
             Script.Functions.Alert({
                 Title = "Fake Revive",
-                Description = "你复活了，假死已经不起作用了.",
-                Reason = "再次启用它来启动假死",
+                Description = "You have revived, fake revive has stopped working.",
+                Reason = "Enable it again to start fake revive",
 
-                LinoriaMessage = "伪活已停止工作，请再次启用它来启动伪活",
+                LinoriaMessage = "Fake Revive has stopped working, enable it again to start fake revive",
             })
             Toggles.FakeRevive:SetValue(false)
         end
@@ -5490,10 +5490,10 @@ Library:GiveSignal(localPlayer:GetAttributeChangedSignal("CurrentRoom"):Connect(
         bypassed = false
         Script.Functions.Alert({
             Title = "Anticheat Bypass",
-            Description = "Halt 已断开防旁路.",
-            Reason = "请再爬一次梯子来修理它.",
+            Description = "Halt has broken anticheat bypass.",
+            Reason = "Please go on a ladder again to fix it.",
 
-            LinoriaMessage = "Halt 防路坏了，请再爬一次梯子来修理.",
+            LinoriaMessage = "Halt has broken anticheat bypass, please go on a ladder again to fix it.",
         })
 
         Options.SpeedSlider:SetMax(Toggles.SpeedBypass.Value and 45 or (Toggles.EnableJump.Value and 3 or 7))
@@ -5853,8 +5853,8 @@ Library:GiveSignal(RunService.RenderStepped:Connect(function()
                         if result then
                             Script.Functions.Alert({
                                 Title = "Auto Anchor Solver",
-                                Description = "解锚 " .. CurrentAnchor .. " 成功!",
-                                Reason = "用密码解决锚 " .. CurrentGameState.AnchorCode,
+                                Description = "Solved Anchor " .. CurrentAnchor .. " successfully!",
+                                Reason = "Solved anchor with the code " .. CurrentGameState.AnchorCode,
                             })
                         end
                     end)
@@ -5867,7 +5867,7 @@ Library:GiveSignal(RunService.RenderStepped:Connect(function()
             if HoldingItem and not isnetowner(HoldingItem) then
                 Script.Functions.Alert({
                     Title = "Banana/Jeff Throw",
-                    Description = "由于所有者发生变化，你不再持有该物品!",
+                    Description = "You are no longer holding the item due to network owner change!",
                 })
                 Script.Temp.HoldingItem = nil
             end
