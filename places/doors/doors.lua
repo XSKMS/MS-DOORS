@@ -5221,7 +5221,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
                     if Options.NotifyEntity.Value[shortName] == true then
                         Script.Functions.Alert({
                             Title = "ENTITIES",
-                            Description = shortName .. " 怪物出现!",
+                            Description = shortName .. " has spawned!",
                             Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "Go find a hiding place!" or nil),
                             Image = EntityTable.NotifyReason[child.Name].Image,
 
@@ -5229,7 +5229,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
                         })
 
                         if Toggles.NotifyChat.Value then
-                            RBXGeneral:SendAsync(shortName .. " 怪物出现!")
+                            RBXGeneral:SendAsync(shortName .. " has spawned!")
                         end
                     end
                 end
@@ -5237,7 +5237,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
         elseif EntityTable.NotifyMessage[child.Name] and Options.NotifyEntity.Value[shortName] then
             Script.Functions.Alert({
                 Title = "ENTITIES",
-                Description = shortName .. " 怪物出现!",
+                Description = shortName .. " has spawned!",
                 Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "Go find a hiding place!" or nil),
                 Image = EntityTable.NotifyReason[child.Name].Image,
 
