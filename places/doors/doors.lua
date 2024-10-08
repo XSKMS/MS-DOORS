@@ -1,33 +1,56 @@
-local AkaliNotif = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kinlei/Dynissimo/main/Scripts/AkaliNotif.lua"))();
-local Notify = AkaliNotif.Notify;
+--!native
+--!optimize 2
+local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/VeaMSRZK"))()
 
-wait(1);
+OrionLib:MakeNotification({
+                    Name = "XSKil Msa 免费",
+                    Content = "欢迎使用【汉化作者已退圈】",
+                    Time = 4
+                })    
+                
+                local sound = Instance.new("Sound", workspace)
+sound.SoundId = "rbxassetid://4590662766"
+sound:Play()
 
-Notify({
-Description = "你的注入器:"..identifyexecutor();
-Title = "XKHAX执行成功!";
-Duration = 2;
-});
+wait(1)
 
-wait(2);
+OrionLib:MakeNotification({
+                    Name = "你的注入器："..identifyexecutor(),
+                    Content = "注入器检测",
+                    Time = 4
+                })
+                
+                local sound = Instance.new("Sound", workspace)
+sound.SoundId = "rbxassetid://4590662766"
+sound:Play()
 
-Notify({
-Description = "欢迎使用XK付费版";
-Title = "XKHAX";
-Duration = 5;
-});
+wait(1)
 
-wait(1);
+OrionLib:MakeNotification({
+                    Name = "用户名："..game.Players.LocalPlayer.Character.Name,
+                    Content = "用户名检测",
+                    Time = 4
+                })    
+                
+                local sound = Instance.new("Sound", workspace)
+sound.SoundId = "rbxassetid://4590662766"
+sound:Play()
 
-Notify({
-Description = "加载中..";
-Title = "XKHAX!";
-Duration = 3;
-});
+wait(1)
 
-print("[XKHAX] Loading...")
-if not ExecutorSupport then print("[XKHAX] Loading stopped, please use the official loadstring for mspaint. (ERROR: ExecutorSupport == nil)") return end
-if getgenv().mspaint_loaded then print("[XKHAX] Loading stopped. (ERROR: Already loaded)") return end
+OrionLib:MakeNotification({
+                    Name = "服务器ID："..game.PlaceId,
+                    Content = "ID检测",
+                    Time = 4
+                })
+                
+    local sound = Instance.new("Sound", workspace)
+sound.SoundId = "rbxassetid://4590662766"
+sound:Play()
+
+print("[mspaint] Loading...")
+if not ExecutorSupport then print("[mspaint] Loading stopped, please use the official loadstring for mspaint. (ERROR: ExecutorSupport == nil)") return end
+if getgenv().mspaint_loaded then print("[mspaint] Loading stopped. (ERROR: Already loaded)") return end
 
 --// Services \\--
 local Lighting = game:GetService("Lighting")
@@ -442,7 +465,7 @@ local Toggles = getgenv().Linoria.Toggles
 local ESPLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/mstudio45/MS-ESP/refs/heads/main/source.lua"))()
 
 local Window = Library:CreateWindow({
-    Title = "XKHAX 3.0.1",
+    Title = "mspaint v2 汉化版 | DOORS |测试版3.0.1",
     Center = true,
     AutoShow = true,
     Resizable = true,
@@ -452,13 +475,6 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0
 })
 
-    local sound = Instance.new("Sound", workspace) do
-    sound.SoundId = "rbxassetid://4590662766"
-    sound.Volume = 4
-    sound.PlayOnRemove = true
-    sound:Destroy()
-    end    
-        
 local Tabs = {
     Main = Window:AddTab("主要的"),
     Exploits = Window:AddTab("移除或无限"),
@@ -6097,9 +6113,9 @@ CreditsGroup:AddLabel("upio -所有者")
 CreditsGroup:AddLabel("主脚本开发")
 CreditsGroup:AddLabel("mstudio45")
 CreditsGroup:AddLabel("bacalhauz")
-CreditsGroup:AddLabel("汉化作者:小玄奘")
+CreditsGroup:AddLabel("汉化作者:小玄奘【已退圈】")
 CreditsGroup:AddLabel("修复辅助:du8")
-CreditsGroup:AddLabel("参与者:lolyex")
+CreditsGroup:AddLabel("参与者:lolyex【暂退】")
 
 Library.ToggleKeybind = Options.MenuKeybind
 
