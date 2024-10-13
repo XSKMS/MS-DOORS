@@ -1,52 +1,5 @@
 --!native
 --!optimize 2
-local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/VeaMSRZK"))()
-
-OrionLib:MakeNotification({
-                    Name = "XSKil Msa 免费",
-                    Content = "欢迎使用【汉化作者已退圈】",
-                    Time = 4
-                })    
-                
-                local sound = Instance.new("Sound", workspace)
-sound.SoundId = "rbxassetid://4590662766"
-sound:Play()
-
-wait(1)
-
-OrionLib:MakeNotification({
-                    Name = "你的注入器："..identifyexecutor(),
-                    Content = "注入器检测",
-                    Time = 4
-                })
-                
-                local sound = Instance.new("Sound", workspace)
-sound.SoundId = "rbxassetid://4590662766"
-sound:Play()
-
-wait(1)
-
-OrionLib:MakeNotification({
-                    Name = "用户名："..game.Players.LocalPlayer.Character.Name,
-                    Content = "用户名检测",
-                    Time = 4
-                })    
-                
-                local sound = Instance.new("Sound", workspace)
-sound.SoundId = "rbxassetid://4590662766"
-sound:Play()
-
-wait(1)
-
-OrionLib:MakeNotification({
-                    Name = "服务器ID："..game.PlaceId,
-                    Content = "ID检测",
-                    Time = 4
-                })
-                
-    local sound = Instance.new("Sound", workspace)
-sound.SoundId = "rbxassetid://4590662766"
-sound:Play()
 
 print("[mspaint] Loading...")
 if not ExecutorSupport then print("[mspaint] Loading stopped, please use the official loadstring for mspaint. (ERROR: ExecutorSupport == nil)") return end
@@ -74,7 +27,6 @@ end
 
 --// Variables \\--
 local Script = {
-    Binded = {}, -- ty geo for idea :smartindividual:
     Connections = {},
     FeatureConnections = {
         Character = {},
@@ -82,7 +34,16 @@ local Script = {
         Door = {},
         Humanoid = {},
         Player = {},
+        Pump = {},
         RootPart = {},
+    },
+
+    CustomControls = {
+        GamepadMoveVector = Vector3.zero,
+        ThumbstickMoveVector = Vector3.zero,
+        ThumbstickRadius = 15,
+        TouchInput = nil,
+        TouchStartPosition = nil,
     },
 
     ESPTable = {
@@ -105,23 +66,16 @@ local Script = {
         Notifs = {Linoria = {}, Doors = {}}
     },
 
-    Lagback = {
-        Detected = false,
-        Threshold = 1,
-        Anchors = 0,
-        LastAnchored = 0,
-        LastSpeed = 0,
-        LastFlySpeed = 0,
-    },
-
     Temp = {
         AnchorFinished = {},
         AutoWardrobeEntities = {},
         Bridges = {},
+        CollisionSize = Vector3.new(5.5, 3, 3),
         FlyBody = nil,
         Guidance = {},
-        PaintingDebounce = false,
+        PaintingDebounce = {},
         UsedBreakers = {},
+        VoidGlitchNotifiedRooms = {}
     },
 
     FakeRevive = {
@@ -154,11 +108,20 @@ local SuffixPrefixes = {
 }
 local PrettyFloorName = {
     ["Fools"] = "Super Hard Mode",
+    ["Retro"] = "Retro Mode"
+}
+local FloorImages = {
+    ["Hotel"] = 16875079348,
+    ["Mines"] = 138779629462354,
+    ["Retro"] = 16992279648,
+    ["Rooms"] = 16874821428,
+    ["Fools"] = 17045908353,
+    ["Backdoor"] = 16874352892
 }
 
 
 local EntityTable = {
-    ["Names"] = {"BackdoorRush", "BackdoorLookman", "RushMoving", "AmbushMoving", "Eyes", "JeffTheKiller", "A60", "A120"},
+    ["Names"] = {"BackdoorRush", "BackdoorLookman", "RushMoving", "AmbushMoving", "Eyes", "JeffTheKiller", "Dread", "A60", "A120"},
     ["SideNames"] = {"FigureRig", "GiggleCeiling", "GrumbleRig", "Snare"},
     ["ShortNames"] = {
         ["BackdoorRush"] = "Blitz",
@@ -262,10 +225,10 @@ local EntityTable = {
 }
 
 local HidingPlaceName = {
-    ["Hotel"] = "柜子",
-    ["Backdoor"] = "柜子",
-    ["Fools"] = "铁柜",
-    ["Retro"] = "铁柜",
+    ["Hotel"] = "Closet",
+    ["Backdoor"] = "Closet",
+    ["Fools"] = "Closet",
+    ["Retro"] = "Closet",
 
     ["Rooms"] = "Locker",
     ["Mines"] = "Locker"
@@ -280,6 +243,15 @@ local SlotsName = {
     "Square",
     "Tall",
     "Wide"
+}
+
+local VoidThresholdValues = {
+    ["Hotel"] = 3,
+    ["Mines"] = 3,
+    ["Retro"] = 3,
+    ["Rooms"] = 4,
+    ["Fools"] = 3,
+    ["Backdoor"] = 2,
 }
 
 local PromptTable = {
@@ -375,7 +347,6 @@ local humanoid: Humanoid
 local rootPart: BasePart
 local collision
 local collisionClone
-local velocityLimiter
 
 --// DOORS Variables \\--
 local entityModules = ReplicatedStorage:WaitForChild("ClientModules"):WaitForChild("EntityModules")
@@ -398,6 +369,12 @@ local remotesFolder = if not isFools then ReplicatedStorage:WaitForChild("Remote
 
 --// Player DOORS Variables \\--
 local currentRoom = localPlayer:GetAttribute("CurrentRoom") or 0
+
+if not workspace.CurrentRooms:FindFirstChild(tostring(currentRoom)) then
+    currentRoom = latestRoom.Value
+    localPlayer:SetAttribute("CurrentRoom", currentRoom)
+end
+
 local nextRoom = currentRoom + 1
 
 local mainUI = playerGui:WaitForChild("MainUI")
@@ -465,7 +442,7 @@ local Toggles = getgenv().Linoria.Toggles
 local ESPLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/mstudio45/MS-ESP/refs/heads/main/source.lua"))()
 
 local Window = Library:CreateWindow({
-    Title = "mspaint v2 汉化版 | DOORS |测试版3.0.1",
+    Title = "mspaint v2 | DOORS",
     Center = true,
     AutoShow = true,
     Resizable = true,
@@ -476,11 +453,11 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
-    Main = Window:AddTab("主要的"),
-    Exploits = Window:AddTab("移除或无限"),
-    Visuals = Window:AddTab("透视和通知"),
-    Floor = Window:AddTab("楼层"),
-    ["UI Settings"] = Window:AddTab("UI和介绍"),
+    Main = Window:AddTab("Main"),
+    Exploits = Window:AddTab("Exploits"),
+    Visuals = Window:AddTab("Visuals"),
+    Floor = Window:AddTab("Floor"),
+    ["UI Settings"] = Window:AddTab("UI Settings"),
 }
 
 --// Captions \\--
@@ -498,6 +475,10 @@ local _mspaint_custom_captions = Instance.new("ScreenGui") do
     Frame.BorderSizePixel = 2
     Frame.Position = UDim2.new(0.5, 0, 0.8, 0)
     Frame.Size = UDim2.new(0, 200, 0, 75)
+    Library:AddToRegistry(Frame, {
+        BackgroundColor3 = "MainColor",
+        BorderColor3 = "AccentColor"
+    })
 
     TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     TextLabel.BackgroundTransparency = 1.000
@@ -510,6 +491,9 @@ local _mspaint_custom_captions = Instance.new("ScreenGui") do
     TextLabel.TextScaled = true
     TextLabel.TextSize = 14
     TextLabel.TextWrapped = true
+    Library:AddToRegistry(TextLabel, {
+        TextColor3 = "FontColor"
+    })
 
     UITextSizeConstraint.MaxTextSize = 35
 
@@ -538,6 +522,27 @@ getgenv()._internal_unload_mspaint = function()
     Library:Unload()
 end
 
+function Script.Functions.NotifyGlitch()
+    if Options.NotifyEntity.Value["Void/Glitch"] and latestRoom.Value > currentRoom + VoidThresholdValues[floor.Value] and alive and not table.find(Script.Temp.VoidGlitchNotifiedRooms, currentRoom) then
+        table.insert(Script.Temp.VoidGlitchNotifiedRooms, currentRoom)
+
+        local message = "Void/Glitch is coming once the next door is opened."
+
+        if isRooms then
+            local roomsLeft = (6 - (latestRoom.Value - currentRoom))
+            message = "Void/Glitch is coming " .. (if roomsLeft == 0 then "once the next door is opened." else "in " .. roomsLeft .. " rooms") .. "."
+        end
+
+        Script.Functions.Alert({
+            Title = "ENTITIES",
+            Description = message,
+            Reason = "Go to the next room to avoid it.",
+
+            Warning = true
+        })
+    end
+end
+
 function Script.Functions.CalculateHideTime(room: number)
     for _, range in ipairs(HideTimeValues) do
         if room >= range.min and room <= range.max then
@@ -558,14 +563,14 @@ function Script.Functions.RandomString()
 end
 
 function Script.Functions.EnforceTypes(args, template)
-    args = type(args) == "table" and args or {}
+    args = if typeof(args) == "table" then args else {}
 
     for key, value in pairs(template) do
         local argValue = args[key]
 
-        if argValue == nil or (value ~= nil and type(argValue) ~= type(value)) then
+        if argValue == nil or (value ~= nil and typeof(argValue) ~= typeof(value)) then
             args[key] = value
-        elseif type(value) == "table" then
+        elseif typeof(value) == "table" then
             args[key] = Script.Functions.EnforceTypes(argValue, value)
         end
     end
@@ -596,8 +601,9 @@ function Script.Functions.UpdateRPC()
 
     BloxstrapRPC.SetRichPresence({
         details = "Playing DOORS [ mspaint v2 ]",
-        state = roomNumberPrefix .. prettifiedRoomNumber .. " (" .. (PrettyFloorName[floor.Value] and PrettyFloorName[floor.Value] or ("The " .. floor.Value) ) .. ")",
+        state = roomNumberPrefix .. prettifiedRoomNumber .. " (" .. if PrettyFloorName[floor.Value] then PrettyFloorName[floor.Value] else ("The " .. floor.Value)  .. ")",
         largeImage = {
+            assetId = FloorImages[floor.Value] or 16875079348,
             hoverText = "Using mspaint v2"
         },
         smallImage = {
@@ -775,7 +781,7 @@ do
         end
     
         if getPositionFromCamera and (camera or workspace.CurrentCamera) then
-            local cameraPosition = camera and camera.CFrame.Position or workspace.CurrentCamera.CFrame.Position
+            local cameraPosition = if camera then camera.CFrame.Position else workspace.CurrentCamera.CFrame.Position
     
             return (cameraPosition - position).Magnitude
         end
@@ -813,6 +819,19 @@ do
         end
     
         return false
+    end
+
+    function Script.Functions.GetMoveVector(): Vector3
+        if controlModule then return controlModule:GetMoveVector() end
+
+        local x, z = 0, 0
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then z -= 1 end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then z += 1 end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then x -= 1 end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then x += 1 end
+
+        return Vector3.new(x, 0, z) + Script.CustomControls.ThumbstickMoveVector + Script.CustomControls.GamepadMoveVector
     end
 end
 
@@ -864,6 +883,12 @@ do
                 From = Options.ESPTracerStart.Value,
                 Color = ESPManager.Color
             },
+            
+            Arrow = {
+                Enabled = Toggles.ESPArrow.Value,
+                CenterOffset = Options.ESPArrowCenterOffset.Value,
+                Color = ESPManager.Color
+            },
     
             OnDestroy = ESPManager.OnDestroy or function()
                 if ESPManager.Object.PrimaryPart and ESPManager.Invisible then ESPManager.Object.PrimaryPart.Transparency = 1 end
@@ -888,13 +913,13 @@ do
             local opened = door:GetAttribute("Opened")
             local locked = room:GetAttribute("RequiresKey")
     
-            local doorState = if opened then "[打开]" elseif locked then "[上锁]" else ""
+            local doorState = if opened then "[Opened]" elseif locked then "[Locked]" else ""
             local doorIdx = Script.Functions.RandomString()
     
             local doorEsp = Script.Functions.ESP({
                 Type = "Door",
                 Object = door:WaitForChild("Door"),
-                Text = string.format("门 %s %s", doorNumber, doorState),
+                Text = string.format("Door %s %s", doorNumber, doorState),
                 Color = Options.DoorEspColor.Value,
     
                 OnDestroy = function()
@@ -903,7 +928,7 @@ do
             })
     
             Script.FeatureConnections.Door[doorIdx] = door:GetAttributeChangedSignal("Opened"):Connect(function()
-                if doorEsp then doorEsp.SetText(string.format("门 %s [打开]", doorNumber)) end
+                if doorEsp then doorEsp.SetText(string.format("Door %s [Opened]", doorNumber)) end
                 if Script.FeatureConnections.Door[doorIdx] then Script.FeatureConnections.Door[doorIdx]:Disconnect() end
             end)
         end
@@ -915,7 +940,7 @@ do
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = string.format("时间拉杆 [+%s]", child.TakeTimer.TextLabel.Text),
+                Text = string.format("Timer Lever [+%s]", child.TakeTimer.TextLabel.Text),
                 Color = Options.ObjectiveEspColor.Value
             })
         -- Backdoor + Hotel
@@ -923,7 +948,7 @@ do
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "钥匙",
+                Text = "Key",
                 Color = Options.ObjectiveEspColor.Value
             })
         -- Hotel
@@ -931,28 +956,28 @@ do
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "电子钥匙",
+                Text = "Electrical Key",
                 Color = Options.ObjectiveEspColor.Value
             })
         elseif child.Name == "LeverForGate" then
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "拉杆",
+                Text = "Gate Lever",
                 Color = Options.ObjectiveEspColor.Value
             })
         elseif child.Name == "LiveHintBook" then
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "书",
+                Text = "Book",
                 Color = Options.ObjectiveEspColor.Value
             })
         elseif child.Name == "LiveBreakerPolePickup" then
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "断路器",
+                Text = "Breaker",
                 Color = Options.ObjectiveEspColor.Value
             })
         -- Mines
@@ -960,21 +985,21 @@ do
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "发电机",
+                Text = "Generator",
                 Color = Options.ObjectiveEspColor.Value
             })
         elseif child.Name == "MinesGateButton" then
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "门电源按钮",
+                Text = "Gate Power Button",
                 Color = Options.ObjectiveEspColor.Value
             })
         elseif child.Name == "FuseObtain" then
             Script.Functions.ESP({
                 Type = "Objective",
                 Object = child,
-                Text = "按钮",
+                Text = "Fuse",
                 Color = Options.ObjectiveEspColor.Value
             })
         elseif child.Name == "MinesAnchor" then
@@ -990,14 +1015,25 @@ do
             end
         elseif child.Name == "WaterPump" then
             local wheel = child:WaitForChild("Wheel", 5)
+            local onFrame = child:FindFirstChild("OnFrame", true)
     
-            if wheel then
-                Script.Functions.ESP({
+            if wheel and (onFrame and onFrame.Visible) then
+                local pumpIdx = Script.Functions.RandomString()
+
+                local pumpEsp = Script.Functions.ESP({
                     Type = "Objective",
                     Object = wheel,
                     Text = "Water Pump",
-                    Color = Options.ObjectiveEspColor.Value
+                    Color = Options.ObjectiveEspColor.Value,
+
+                    OnDestroy = function()
+                        if Script.FeatureConnections.Pump[pumpIdx] then Script.FeatureConnections.Pump[pumpIdx]:Disconnect() end
+                    end
                 })
+
+                Script.FeatureConnections.Pump[pumpIdx] = onFrame:GetPropertyChangedSignal("Visible"):Connect(function()
+                    if pumpEsp then pumpEsp.Destroy() end
+                end)
             end
         end
     end
@@ -1036,7 +1072,7 @@ do
     function Script.Functions.ChestESP(chest)
         local text = chest.Name:gsub("Box", ""):gsub("_Vine", ""):gsub("_Small", ""):gsub("Locked", "")
         local locked = chest:GetAttribute("Locked")
-        local state = if locked then "[上锁]" else ""
+        local state = if locked then "[Locked]" else ""
     
         Script.Functions.ESP({
             Type = "Chest",
@@ -1071,7 +1107,7 @@ do
         Script.Functions.ESP({
             Type = "HidingSpot",
             Object = spot,
-            Text = if spot:GetAttribute("LoadModule") == "床" then "床" else HidingPlaceName[floor.Value],
+            Text = if spot:GetAttribute("LoadModule") == "Bed" then "Bed" else HidingPlaceName[floor.Value],
             Color = Options.HidingSpotEspColor.Value
         })
     end
@@ -1080,7 +1116,7 @@ do
         Script.Functions.ESP({
             Type = "Gold",
             Object = gold,
-            Text = string.format("金币 [%s]", gold:GetAttribute("GoldValue")),
+            Text = string.format("Gold [%s]", gold:GetAttribute("GoldValue")),
             Color = Options.GoldEspColor.Value
         })
     end
@@ -1143,6 +1179,17 @@ do
     end
 
     function Script.Functions.ChildCheck(child)
+        -- optimization (ty lsplash)
+        if (child.Name == "AnimSaves" or child.Name == "Keyframe" or child:IsA("KeyframeSequence")) then
+            child:Destroy()
+            return
+        end
+        
+        -- skip
+        if not (child:IsA("ProximityPrompt") or child:IsA("Model") or child:IsA("BasePart") or child:IsA("Decal")) then
+            return
+        end
+                
         if Script.Functions.PromptCondition(child) then
             task.defer(function()
                 if not child:GetAttribute("Hold") then child:SetAttribute("Hold", child.HoldDuration) end
@@ -1175,18 +1222,16 @@ do
                 Script.Functions.ESP({
                     Type = "None",
                     Object = child,
-                    Text = "阶梯",
+                    Text = "Ladder",
                     Color = Color3.new(0, 0, 1)
                 })
             end
     
             if child.Name == "Snare" and Toggles.AntiSnare.Value then
                 child:WaitForChild("Hitbox", 5).CanTouch = false
-            end
-            if child.Name == "GiggleCeiling" and Toggles.AntiGiggle.Value then
+            elseif child.Name == "GiggleCeiling" and Toggles.AntiGiggle.Value then
                 child:WaitForChild("Hitbox", 5).CanTouch = false
-            end
-            if (child:GetAttribute("LoadModule") == "DupeRoom" or child:GetAttribute("LoadModule") == "SpaceSideroom") and Toggles.AntiDupe.Value then
+            elseif (child:GetAttribute("LoadModule") == "DupeRoom" or child:GetAttribute("LoadModule") == "SpaceSideroom") and Toggles.AntiDupe.Value then
                 Script.Functions.DisableDupe(child, true, child:GetAttribute("LoadModule") == "SpaceSideroom")
             end
     
@@ -1214,8 +1259,10 @@ do
                     end
                 end
             end
-        elseif child:IsA("BasePart") then        
-            if child.Name == "Egg" and Toggles.AntiGloomEgg.Value then
+        elseif child:IsA("BasePart") then
+            if tonumber(child.Name) and child.Name == child.Parent.Name then
+                child.Size *= Vector3.new(1, 100, 1)
+            elseif child.Name == "Egg" and Toggles.AntiGloomEgg.Value then
                 child.CanTouch = false
             end
     
@@ -1238,6 +1285,8 @@ do
                     clone.Parent = child.Parent
                     
                     table.insert(Script.Temp.Bridges, clone)
+                elseif Toggles.AntiSeekFlood.Value and child.Name == "SeekFloodline" then
+                    child.CanCollide = true
                 end
             end
         elseif child:IsA("Decal") and Toggles.AntiLag.Value then
@@ -1493,7 +1542,7 @@ do
 
                 local entityDeleted = (entity == nil or entity.Parent == nil)
                 local inView = Script.Functions.IsInViewOfPlayer(entity.PrimaryPart, distanceEntity + (addMoreDist == true and 15 or 0), exclusion)
-                local isClose = Script.Functions.DistanceFromCharacter(entity:GetPivot().Position) < distanceEntity + (addMoreDist == true and 15 or 0);
+                local isClose = Script.Functions.DistanceFromCharacter(entity:GetPivot().Position) < distanceEntity + (addMoreDist == true and 15 or 0)
     
                 isSafe = entityDeleted == true and true or (inView == false and isClose == false);
                 if isSafe == false then break end
@@ -2076,7 +2125,7 @@ do
     --If ESP Toggle is changed, you can call this function directly.
     function Script.Functions.Minecart.DrawNodes()
         local pathESP_enabled = Toggles.MinecartPathVisualiser.Value
-        local espRealColor = pathESP_enabled and MinecartPathNodeColor.Green or MinecartPathNodeColor.Disabled
+        local espRealColor = if pathESP_enabled then MinecartPathNodeColor.Green else MinecartPathNodeColor.Disabled
         
         for idx, path: tPathfind in ipairs(MinecartPathfind) do
             if path.esp and pathESP_enabled then continue end -- if status is unchanged.
@@ -2194,8 +2243,9 @@ do
     
                     if Toggles.NotifyPadlock.Value and count < 5 then
                         Script.Functions.Alert({
-                            Title = "Library Code",
+                            Title = "Padlock Code",
                             Description = string.format("Library Code: %s", output),
+                            Reason = if tonumber(code) then "Solved the library padlock code" else "You are still missing some books",
                         })
     
                         if Toggles.NotifyChat.Value and count == 0 then
@@ -2278,11 +2328,11 @@ do
             Script.FeatureConnections.Humanoid["Jump"] = humanoid:GetPropertyChangedSignal("JumpHeight"):Connect(function()
                 if not Toggles.SpeedBypass.Value and latestRoom.Value < 100 and not Script.FakeRevive.Enabled then
                     if humanoid.JumpHeight > 0 then
-                        lastSpeed = Options.SpeedSlider.Value
-                        Options.SpeedSlider:SetMax(3)
+                        lastSpeed = Options.WalkSpeed.Value
+                        Options.WalkSpeed:SetMax(18)
                     elseif lastSpeed > 0 then
-                        Options.SpeedSlider:SetMax(7)
-                        Options.SpeedSlider:SetValue(lastSpeed)
+                        Options.WalkSpeed:SetMax(22)
+                        Options.WalkSpeed:SetValue(lastSpeed)
                         lastSpeed = 0
                     end
                 end
@@ -2291,10 +2341,6 @@ do
             Script.FeatureConnections.Humanoid["Died"] = humanoid.Died:Connect(function()
                 if collisionClone then
                     collisionClone:Destroy()
-                end
-    
-                if velocityLimiter then
-                    velocityLimiter:Destroy()
                 end
             end)
     
@@ -2325,48 +2371,10 @@ do
                 local existingProperties = rootPart.CustomPhysicalProperties
                 rootPart.CustomPhysicalProperties = PhysicalProperties.new(100, existingProperties.Friction, existingProperties.Elasticity, existingProperties.FrictionWeight, existingProperties.ElasticityWeight)
             end
-    
-            velocityLimiter = Instance.new("LinearVelocity", character)
-            velocityLimiter.Enabled = false
-            velocityLimiter.MaxForce = math.huge
-            velocityLimiter.VectorVelocity = Vector3.new(0, 0, 0)
-            velocityLimiter.RelativeTo = Enum.ActuatorRelativeTo.World
-            velocityLimiter.Attachment0 = rootPart:WaitForChild("RootAttachment")
-    
-            Script.FeatureConnections.RootPart["Anchored"] = rootPart:GetPropertyChangedSignal("Anchored"):Connect(function()
-                local lastAnchoredDelta = os.time() - Script.Lagback.LastAnchored
-    
-                if rootPart.Anchored and Toggles.LagbackDetection.Value and Toggles.SpeedBypass.Value and not Script.Lagback.Detected then
-                    Script.Lagback.Anchors += 1
-                    Script.Lagback.LastAnchored = os.time()
-    
-                    if Script.Lagback.Anchors >= 2 and lastAnchoredDelta <= Script.Lagback.Threshold then
-                        Script.Lagback.Detected = true
-                        Script.Lagback.Anchors = 0
-                        Script.Lagback.LastSpeed = Options.SpeedSlider.Value
-                        Script.Lagback.LastFlySpeed = Options.FlySpeed.Value
-    
-                        Script.Functions.Alert({
-                            Title = "Lagback Detection",
-                            Description = "Fixing Lagback...",
-                        })
-                        Toggles.SpeedBypass:SetValue(false)
-                        local cframeChanged = false
-    
-                        if rootPart.Anchored == true then lastCheck = os.time(); repeat task.wait() until rootPart.Anchored == false or (os.time() - lastCheck) > 5 end
-                        task.spawn(function() lastCheck = os.time(); rootPart:GetPropertyChangedSignal("CFrame"):Wait(); cframeChanged = true; end)
-                        repeat task.wait() until cframeChanged or (os.time() - lastCheck) > 5
-                        if rootPart.Anchored == true then lastCheck = os.time(); repeat task.wait() until rootPart.Anchored == false or (os.time() - lastCheck) > 5 end
-    
-                        Toggles.SpeedBypass:SetValue(true)
-                        Options.SpeedSlider:SetValue(Script.Lagback.LastSpeed)
-                        Options.FlySpeed:SetValue(Script.Lagback.LastFlySpeed)
-                        Script.Lagback.Detected = false
-                        Script.Functions.Alert({
-                            Title = "Lagback Detection",
-                            Description = "Fixed Lagback!"
-                        })
-                    end
+
+            Script.FeatureConnections.RootPart["Touched"] = rootPart.Touched:Connect(function(touchedPart)
+                if tonumber(touchedPart.Name) and touchedPart.Name == touchedPart.Parent.Name then
+                    localPlayer:SetAttribute("CurrentRoom", tonumber(touchedPart.Name))
                 end
             end)
         end
@@ -2401,7 +2409,7 @@ do
                             ladderEsp.Destroy()
                         end
     
-                        Options.SpeedSlider:SetMax(45)
+                        Options.WalkSpeed:SetMax(75)
                         Options.FlySpeed:SetMax(75)
     
                         Script.Functions.Alert({
@@ -2453,7 +2461,7 @@ do
                         Script.Functions.Alert({
                             Title = "Padlock Code",
                             Description = string.format("Library Code: %s", output),
-                            Reason = (tonumber(code) and "Solved the library padlock code" or "You are still missing some books"),
+                            Reason = if tonumber(code) then "Solved the library padlock code" else "You are still missing some books",
                         })
     
                         if Toggles.NotifyChat.Value and count == 0 then
@@ -2468,48 +2476,57 @@ end
 
 --// Main \\--
 
-local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("玩家") do
-    PlayerGroupBox:AddSlider("SpeedSlider", {
-        Text = "速度调节【在移除类栏可开45速度】",
-        Default = 0,
-        Min = 0,
-        Max = 7,
-        Rounding = 1
+local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("Player") do
+    PlayerGroupBox:AddToggle("EnableSpeedHack", {
+        Text = "Enable Speed Hack",
+        Default = false
     })
 
-    PlayerGroupBox:AddSlider("VelocityLimiter", {
-        Text = "速度限制",
-        Default = 25,
+    PlayerGroupBox:AddSlider("WalkSpeed", {
+        Text = "Walk Speed",
+        Default = 15,
         Min = 0,
-        Max = 25,
-        Rounding = 1
+        Max = 22,
+        Rounding = 0,
+        Compact = true
+    })
+
+    PlayerGroupBox:AddSlider("LadderSpeed", {
+        Text = "Ladder Speed",
+        Default = 15,
+        Min = 0,
+        Max = 75,
+        Rounding = 0,
+        Compact = true
+    })
+
+    PlayerGroupBox:AddToggle("EnableJump", {
+        Text = "Enable Jump",
+        Default = false,
+        Visible = not isFools
     })
 
     PlayerGroupBox:AddToggle("NoAccel", {
-        Text = "无加速度",
-        Default = false
-    })
-
-    PlayerGroupBox:AddToggle("InstaInteract", {
-        Text = "即时互动",
-        Default = false
-    })
-
-    PlayerGroupBox:AddToggle("FastClosetExit", {
-        Text = "快速柜子",
+        Text = "No Acceleration",
         Default = false
     })
 
     PlayerGroupBox:AddDivider()
 
-    PlayerGroupBox:AddToggle("EnableJump", {
-        Text = "跳跃",
-        Default = false,
-        Visible = not isFools,
+    PlayerGroupBox:AddToggle("InstaInteract", {
+        Text = "Instant Interact",
+        Default = false
     })
 
+    PlayerGroupBox:AddToggle("FastClosetExit", {
+        Text = "Fast Closet Exit",
+        Default = false
+    })
+
+    PlayerGroupBox:AddDivider()
+
     PlayerGroupBox:AddToggle("Noclip", {
-        Text = "穿墙",
+        Text = "Noclip",
         Default = false
     }):AddKeyPicker("NoclipKey", {
         Mode = "Toggle",
@@ -2519,7 +2536,7 @@ local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("玩家") do
     })
 
     PlayerGroupBox:AddToggle("Fly", {
-        Text = "飞行",
+        Text = "Fly",
         Default = false
     }):AddKeyPicker("FlyKey", {
         Mode = "Toggle",
@@ -2529,7 +2546,7 @@ local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("玩家") do
     })
     
     PlayerGroupBox:AddSlider("FlySpeed", {
-        Text = "飞行速度",
+        Text = "Fly Speed",
         Default = 15,
         Min = 10,
         Max = 22,
@@ -2538,19 +2555,19 @@ local PlayerGroupBox = Tabs.Main:AddLeftGroupbox("玩家") do
     })
 end
 
-local ReachGroupBox = Tabs.Main:AddLeftGroupbox("远程") do
+local ReachGroupBox = Tabs.Main:AddLeftGroupbox("Reach") do
     ReachGroupBox:AddToggle("DoorReach", {
-        Text = "远程开门",
+        Text = "Door Reach",
         Default = false
     })
 
     ReachGroupBox:AddToggle("PromptClip", {
-        Text = "互动距离",
+        Text = "Prompt Clip",
         Default = false
     })
 
     ReachGroupBox:AddSlider("PromptReachMultiplier", {
-        Text = "调节互动距离",
+        Text = "Prompt Reach Multiplier",
         Default = 1,
         Min = 1,
         Max = 2,
@@ -2558,9 +2575,9 @@ local ReachGroupBox = Tabs.Main:AddLeftGroupbox("远程") do
     })
 end
 
-local AutomationGroupBox = Tabs.Main:AddRightGroupbox("自动类") do
+local AutomationGroupBox = Tabs.Main:AddRightGroupbox("Automation") do
     AutomationGroupBox:AddToggle("AutoInteract", {
-        Text = "自动互动",
+        Text = "Auto Interact",
         Default = false
     }):AddKeyPicker("AutoInteractKey", {
         Mode = Library.IsMobile and "Toggle" or "Hold",
@@ -2569,16 +2586,26 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("自动类") do
         SyncToggleState = Library.IsMobile
     })
 
+    AutomationGroupBox:AddDropdown("AutoInteractIgnore", {
+        AllowNull = true,
+        Values = {"Jeff Items", "Unlock w/ Lockpick", "Paintings", "Gold", "Light Source Items", "Skull Prompt"},
+        Default = {"Jeff Items"},
+        Multi = true,
+
+        Text = "Ignore List"
+    })
+
     AutomationGroupBox:AddDivider()
+
     AutomationGroupBox:AddToggle("AutoWardrobeNotif", {
-        Text = "自动 " .. HidingPlaceName[floor.Value] .. " 通知",
+        Text = "Auto " .. HidingPlaceName[floor.Value] .. " Notifications",
         Default = false
     })
 
     AutomationGroupBox:AddToggle("AutoWardrobe", {
-        Text = "自动躲 " .. HidingPlaceName[floor.Value],
+        Text = "Auto " .. HidingPlaceName[floor.Value],
         Default = false,
-        Tooltip = "多个实体可能会失败",
+        Tooltip = "Might fail with multiple entities (Rush & Ambush, 3+ Rush spawns)",
         Visible = not isRetro
     }):AddKeyPicker("AutoWardrobeKey", {
         Mode = "Toggle",
@@ -2589,19 +2616,19 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("自动类") do
     AutomationGroupBox:AddDivider()
 
     AutomationGroupBox:AddToggle("AutoHeartbeat", {
-        Text = "自动心跳迷你游戏",
+        Text = "Auto Heartbeat Minigame",
         Default = false,
         Visible = ExecutorSupport["getnamecallmethod"]
     })
 
     if isHotel or isFools then
         AutomationGroupBox:AddToggle("AutoLibrarySolver", {
-            Text = "自动图书馆密码",
+            Text = "Auto Library Code",
             Default = false
         })
 
         AutomationGroupBox:AddSlider("AutoLibraryDistance", {
-            Text = "自动距离调节",
+            Text = "Unlock Distance",
             Default = 20,
             Min = 1,
             Max = 100,
@@ -2610,17 +2637,18 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("自动类") do
         })
 
         AutomationGroupBox:AddDivider()
+
         AutomationGroupBox:AddDropdown("AutoBreakerSolverMethod", {
             AllowNull = false,
-            Values = {"合法的", "剥削"},
+            Values = {"Legit", "Exploit"},
             Default = "Legit",
             Multi = false,
 
-            Text = "自动解断路器"
+            Text = "Auto Breaker Solver Method"
         })
 
         AutomationGroupBox:AddToggle("AutoBreakerSolver", {
-            Text = "自动捡电路盒",
+            Text = "Auto Breaker Box",
             Default = false
         })
 
@@ -2658,9 +2686,9 @@ local AutomationGroupBox = Tabs.Main:AddRightGroupbox("自动类") do
     end
 end
 
-local MiscGroupBox = Tabs.Main:AddRightGroupbox("其余") do
+local MiscGroupBox = Tabs.Main:AddRightGroupbox("Misc") do
     MiscGroupBox:AddButton({
-        Text = "复活【不是免费】",
+        Text = "Revive",
         Func = function()
             remotesFolder.Revive:FireServer()
         end,
@@ -2668,7 +2696,7 @@ local MiscGroupBox = Tabs.Main:AddRightGroupbox("其余") do
     })
 
     MiscGroupBox:AddButton({
-        Text = "在玩一次",
+        Text = "Play Again",
         Func = function()
             remotesFolder.PlayAgain:FireServer()
         end,
@@ -2676,7 +2704,7 @@ local MiscGroupBox = Tabs.Main:AddRightGroupbox("其余") do
     })
 
     MiscGroupBox:AddButton({
-        Text = "返回大厅",
+        Text = "Lobby",
         Func = function()
             remotesFolder.Lobby:FireServer()
         end,
@@ -2686,42 +2714,47 @@ end
 
 --// Exploits \\--
 
-local AntiEntityGroupBox = Tabs.Exploits:AddLeftGroupbox("移除怪物") do
+local AntiEntityGroupBox = Tabs.Exploits:AddLeftGroupbox("Anti-Entity") do
+    AntiEntityGroupBox:AddToggle("AntiDread", {
+        Text = "Anti-Dread",
+        Default = false
+    })
+
     AntiEntityGroupBox:AddToggle("AntiHalt", {
-        Text = "移除-Halt【蓝色幽灵】",
+        Text = "Anti-Halt",
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiScreech", {
-        Text = "移除-Screech【小黑子】",
+        Text = "Anti-Screech",
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiDupe", {
-        Text = "移除-" .. (isBackdoor and "什么" or "假门"),
+        Text = "Anti-" .. (isBackdoor and "Vacuum" or "Dupe"),
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiEyes", {
-        Text = "移除-" .. (isBackdoor and "Lookman伤害" or "眼睛伤害"),
+        Text = "Anti-" .. (isBackdoor and "Lookman" or "Eyes"),
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiSnare", {
-        Text = "移除-Snare【地刺】",
+        Text = "Anti-Snare",
         Default = false
     })
 
     AntiEntityGroupBox:AddToggle("AntiHearing", {
-        Text = "移除-Figure 听觉",
+        Text = "Anti-Figure Hearing",
         Default = false,
         Visible = not isFools
     })
 end
 
-local TrollingGroupBox = Tabs.Exploits:AddLeftGroupbox("整蛊") do
+local TrollingGroupBox = Tabs.Exploits:AddLeftGroupbox("Trolling") do
     TrollingGroupBox:AddToggle("SpamOtherTools", {
-        Text = "不知道",
+        Text = "Spam Other Tools",
         Default = false
     }):AddKeyPicker("SpamOtherTools", {
         Default = "X",
@@ -2731,50 +2764,36 @@ local TrollingGroupBox = Tabs.Exploits:AddLeftGroupbox("整蛊") do
     })
 
     TrollingGroupBox:AddToggle("UpsideDown", {
-        Text = "倒立",
+        Text = "Upside Down",
         Default = false
     })
 end
 
-local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("绕过") do
-    BypassGroupBox:AddDropdown("SpeedBypassMethod", {
-        AllowNull = false,
-        Values = {"Massless", --[["Size"]]},
-        Default = "Massless",
-        Multi = false,
-
-        Text = "速度旁路法【开启这些功能速度可开45超快】"
-    })
-    
-    BypassGroupBox:AddSlider("SpeedBypassDelay", {
-        Text = "绕过延迟",
-        Default = 0.21,
-        Min = 0.2,
-        Max = 0.22,
-        Rounding = 2,
-        Compact = true
-    })
-
+local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("Bypass") do
     BypassGroupBox:AddToggle("SpeedBypass", {
-        Text = "速度绕过",
+        Text = "Speed Bypass",
         Default = false
     })
 
-    BypassGroupBox:AddToggle("LagbackDetection", {
-        Text = "速度检测",
-        Default = false
+    BypassGroupBox:AddSlider("SpeedBypassDelay", {
+        Text = "Speed Bypass Delay",
+        Default = 0.23,
+        Min = 0.22,
+        Max = 0.25,
+        Rounding = 3,
+        Compact = true
     })
 
     BypassGroupBox:AddDivider()
     
     BypassGroupBox:AddToggle("InfItems", {
-        Text = "无限物品【小部分】",
+        Text = "Infinite Items",
         Default = false,
         Visible = not isFools
     })
 
     BypassGroupBox:AddToggle("InfCrucifix", {
-        Text = "无限十字架！",
+        Text = "Infinite Crucifix",
         Default = false,
         Visible = not isFools,
         Tooltip = "Very risky, you might die/lose the crucifix",
@@ -2784,12 +2803,12 @@ local BypassGroupBox = Tabs.Exploits:AddRightGroupbox("绕过") do
     BypassGroupBox:AddDivider()
 
     BypassGroupBox:AddToggle("FakeRevive", {
-        Text = "假复活",
+        Text = "Fake Revive",
         Default = false
     })
 
     BypassGroupBox:AddToggle("DeleteSeek", {
-        Text = "删除seek(FE)",
+        Text = "Delete Seek (FE)",
         Default = false
     })
 end
@@ -2798,44 +2817,44 @@ end
 --// Visuals \\--
 
 local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
-    local ESPTab = ESPTabBox:AddTab("绘制") do
+    local ESPTab = ESPTabBox:AddTab("ESP") do
         ESPTab:AddToggle("DoorESP", {
-            Text = "门透视",
+            Text = "Door",
             Default = false,
         }):AddColorPicker("DoorEspColor", {
             Default = Color3.new(0, 1, 1),
         })
     
         ESPTab:AddToggle("ObjectiveESP", {
-            Text = "钥匙之类透视",
+            Text = "Objective",
             Default = false,
         }):AddColorPicker("ObjectiveEspColor", {
             Default = Color3.new(0, 1, 0),
         })
     
         ESPTab:AddToggle("EntityESP", {
-            Text = "怪物透视",
+            Text = "Entity",
             Default = false,
         }):AddColorPicker("EntityEspColor", {
             Default = Color3.new(1, 0, 0),
         })
     
         ESPTab:AddToggle("ItemESP", {
-            Text = "物品透视",
+            Text = "Item",
             Default = false,
         }):AddColorPicker("ItemEspColor", {
             Default = Color3.new(1, 0, 1),
         })
     
         ESPTab:AddToggle("ChestESP", {
-            Text = "箱子透视",
+            Text = "Chest",
             Default = false,
         }):AddColorPicker("ChestEspColor", {
             Default = Color3.new(1, 1, 0),
         })
     
         ESPTab:AddToggle("PlayerESP", {
-            Text = "玩家透视",
+            Text = "Player",
             Default = false,
         }):AddColorPicker("PlayerEspColor", {
             Default = Color3.new(1, 1, 1),
@@ -2849,43 +2868,35 @@ local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
         })
     
         ESPTab:AddToggle("GoldESP", {
-            Text = "金币透视",
+            Text = "Gold",
             Default = false,
         }):AddColorPicker("GoldEspColor", {
             Default = Color3.new(1, 1, 0),
         })
     
         ESPTab:AddToggle("GuidingLightESP", {
-            Text = "引导之光透视",
+            Text = "Guiding Light",
             Default = false,
         }):AddColorPicker("GuidingLightEspColor", {
             Default = Color3.new(0, 0.5, 1),
         })
     end
 
-    local ESPSettingsTab = ESPTabBox:AddTab("设置") do
+    local ESPSettingsTab = ESPTabBox:AddTab("Settings") do
+        ESPSettingsTab:AddToggle("ESPRainbow", {
+            Text = "Rainbow ESP",
+            Default = false,
+        })
+
+        ESPSettingsTab:AddDivider()
+
         ESPSettingsTab:AddToggle("ESPHighlight", {
-            Text = "显示轮廓",
+            Text = "Enable Highlight",
             Default = true,
         })
 
-        ESPSettingsTab:AddToggle("ESPTracer", {
-            Text = "移除线条",
-            Default = true,
-        })
-    
-        ESPSettingsTab:AddToggle("ESPRainbow", {
-            Text = "彩虹绘制",
-            Default = false,
-        })
-    
-        ESPSettingsTab:AddToggle("ESPDistance", {
-            Text = "显示距离",
-            Default = true
-        })
-    
         ESPSettingsTab:AddSlider("ESPFillTransparency", {
-            Text = "颜色亮度",
+            Text = "Fill Transparency",
             Default = 0.75,
             Min = 0,
             Max = 1,
@@ -2893,19 +2904,33 @@ local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
         })
     
         ESPSettingsTab:AddSlider("ESPOutlineTransparency", {
-            Text = "轮廓透明度",
+            Text = "Outline Transparency",
             Default = 0,
             Min = 0,
             Max = 1,
             Rounding = 2
         })
+
+        ESPSettingsTab:AddDivider()
+
+        ESPSettingsTab:AddToggle("ESPDistance", {
+            Text = "Show Distance",
+            Default = true
+        })
     
         ESPSettingsTab:AddSlider("ESPTextSize", {
-            Text = "文本大小",
+            Text = "Text Size",
             Default = 22,
             Min = 16,
             Max = 26,
             Rounding = 0
+        })
+    
+        ESPSettingsTab:AddDivider()
+
+        ESPSettingsTab:AddToggle("ESPTracer", {
+            Text = "Enable Tracer",
+            Default = true,
         })
 
         ESPSettingsTab:AddDropdown("ESPTracerStart", {
@@ -2914,14 +2939,29 @@ local ESPTabBox = Tabs.Visuals:AddLeftTabbox() do
             Default = "Bottom",
             Multi = false,
 
-            Text = "线条绘制位置"
+            Text = "Tracer Start Position"
+        })
+
+        ESPSettingsTab:AddDivider()
+
+        ESPSettingsTab:AddToggle("ESPArrow", {
+            Text = "Enable Arrow",
+            Default = true,
+        })
+
+        ESPSettingsTab:AddSlider("ESPArrowCenterOffset", {
+            Text = "Arrow Center Offset",
+            Default = 300,
+            Min = 0,
+            Max = 500,
+            Rounding = 0
         })
     end
 end
 
-local AmbientGroupBox = Tabs.Visuals:AddLeftGroupbox("环境") do
+local AmbientGroupBox = Tabs.Visuals:AddLeftGroupbox("Ambient") do
     AmbientGroupBox:AddSlider("Brightness", {
-        Text = "黑处亮度调节",
+        Text = "Brightness",
         Default = 0,
         Min = 0,
         Max = 3,
@@ -2929,154 +2969,188 @@ local AmbientGroupBox = Tabs.Visuals:AddLeftGroupbox("环境") do
     })
 
     AmbientGroupBox:AddToggle("Fullbright", {
-        Text = "高亮",
+        Text = "Fullbright",
         Default = false,
     })
 
     AmbientGroupBox:AddToggle("NoFog", {
-        Text = "移除雾",
+        Text = "No Fog",
         Default = false,
     })
 
     AmbientGroupBox:AddToggle("AntiLag", {
-        Text = "流畅画质",
+        Text = "Anti-Lag",
         Default = false,
     })
 end
 
 local NotifyTabBox = Tabs.Visuals:AddRightTabbox() do
-    local NotifyTab = NotifyTabBox:AddTab("通知") do
+    local NotifyTab = NotifyTabBox:AddTab("Notifier") do
         NotifyTab:AddDropdown("NotifyEntity", {
             AllowNull = true,
-            Values = {"Blitz", "Lookman", "Rush", "Ambush", "Eyes", "Halt Room", "A60", "A120", "Jeff The Killer", "Gloombat Swarm"},
+            Values = {"Blitz", "Lookman", "Rush", "Ambush", "Eyes", "Halt Room", "A60", "A120", "Jeff The Killer", "Gloombat Swarm", "Void/Glitch"},
             Default = {},
             Multi = true,
 
-            Text = "选择要通知的怪物"
+            Text = "Notify Entities"
         })
 
         NotifyTab:AddToggle("NotifyPadlock", {
-            Text = "通知图书馆密码",
+            Text = "Notify Library Code",
             Default = false,
         })
 
         NotifyTab:AddToggle("NotifyOxygen", {
-            Text = "通知氧气",
+            Text = "Notify Oxygen",
             Default = false,
         })
 
         NotifyTab:AddToggle("NotifyHideTime", {
-            Text = "通知隐藏时间",
+            Text = "Notify Hide Time",
             Default = false,
         })
     end
 
-    local NotifySettingsTab = NotifyTabBox:AddTab("设置必看") do
+    local NotifySettingsTab = NotifyTabBox:AddTab("Settings") do
         NotifySettingsTab:AddToggle("NotifyChat", {
-            Text = "聊天通知",
+            Text = "Notify Chat",
             Tooltip = "Entity and Padlock Code",
             Default = false,
+        })
+
+        NotifySettingsTab:AddInput("NotifyEntityMessage", {
+            Default = "has spawned!",
+            Numeric = false,
+            Finished = true,
+            ClearTextOnFocus = false,
+
+            Text = "Entity Notifier Message"
         })
 
         NotifySettingsTab:AddDivider()
         
         NotifySettingsTab:AddToggle("NotifySound", {
-            Text = "通知提示音",
+            Text = "Play Alert Sound",
             Default = true,
         })
 
         NotifySettingsTab:AddDropdown("NotifySide", {
             AllowNull = false,
-            Values = {"左", "右"},
+            Values = {"Left", "Right"},
             Default = "Right",
             Multi = false,
 
-            Text = "通知位置"
+            Text = "Notification Side"
         })
 
         NotifySettingsTab:AddDropdown("NotifyStyle", {
             AllowNull = false,
-            Values = {"原版", "doors成就版"},
+            Values = {"Linoria", "Doors"},
             Default = "Linoria",
             Multi = false,
 
-            Text = "通知样式"
+            Text = "Notification Style"
         })
     end
 end
 
-local SelfGroupBox = Tabs.Visuals:AddRightGroupbox("自己") do
-    SelfGroupBox:AddToggle("ThirdPerson", {
-        Text = "第三人称",
-        Default = false
-    }):AddKeyPicker("ThirdPersonKey", {
-        Default = "V",
-        Text = "Third Person",
-        Mode = "Toggle",
-        SyncToggleState = not Library.IsMobile -- ????
-    })
+local SelfTabBox = Tabs.Visuals:AddRightTabbox() do
+    local SelfTab = SelfTabBox:AddTab("Self") do
+        SelfTab:AddToggle("ThirdPerson", {
+            Text = "Third Person",
+            Default = false
+        }):AddKeyPicker("ThirdPersonKey", {
+            Default = "V",
+            Text = "Third Person",
+            Mode = "Toggle",
+            SyncToggleState = not Library.IsMobile -- ????
+        })
+        
+        SelfTab:AddSlider("FOV", {
+            Text = "Field of View",
+            Default = 70,
+            Min = 70,
+            Max = 120,
+            Rounding = 0
+        })
+        
+        SelfTab:AddToggle("NoCamBob", {
+            Text = "No Camera Bobbing",
+            Default = false,
+            Visible = ExecutorSupport["require"]
+        })
     
-    SelfGroupBox:AddSlider("FOV", {
-        Text = "视野",
-        Default = 70,
-        Min = 70,
-        Max = 120,
-        Rounding = 0
-    })
+        SelfTab:AddToggle("NoCamShake", {
+            Text = "No Camera Shake",
+            Default = false,
+            Visible = ExecutorSupport["require"]
+        })
     
-    SelfGroupBox:AddToggle("NoCamShake", {
-        Text = "没有相机抖动",
-        Default = false,
-        Visible = ExecutorSupport["require"]
-    })
+        SelfTab:AddToggle("NoCutscenes", {
+            Text = "No Cutscenes",
+            Default = false,
+        })
+    
+        SelfTab:AddToggle("TranslucentHidingSpot", {
+            Text = "Translucent " .. HidingPlaceName[floor.Value],
+            Default = false
+        })
+        
+        SelfTab:AddSlider("HidingTransparency", {
+            Text = "Hiding Transparency",
+            Default = 0.5,
+            Min = 0,
+            Max = 1,
+            Rounding = 1,
+            Compact = true,
+        })
+    end
 
-    SelfGroupBox:AddToggle("NoCutscenes", {
-        Text = "没有过场动画",
-        Default = false,
-    })
+    local EffectsTab = SelfTabBox:AddTab("Effects") do
+        EffectsTab:AddToggle("NoGlitchEffect", {
+            Text = "No Glitch Effect",
+            Default = false
+        })
 
-    SelfGroupBox:AddToggle("TranslucentHidingSpot", {
-        Text = "半透明的 " .. HidingPlaceName[floor.Value],
-        Default = false
-    })
-    
-    SelfGroupBox:AddSlider("HidingTransparency", {
-        Text = "隐藏透明度",
-        Default = 0.5,
-        Min = 0,
-        Max = 1,
-        Rounding = 1,
-        Compact = true,
-    })
+        EffectsTab:AddToggle("NoVoidEffect", {
+            Text = "No Void Effect",
+            Default = false
+        })
+
+        EffectsTab:AddToggle("NoSpiderJumpscare", {
+            Text = "No Spider Jumpscare",
+            Default = false
+        })
+    end
 end
 
 --// Floor \\--
 task.spawn(function()
     if isHotel then
-        local Hotel_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("防-怪物") do
+        local Hotel_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("Anti-Entity") do
             Hotel_AntiEntityGroupBox:AddToggle("AntiSeekObstructions", {
-                Text = "移除-Seek 手臂",
+                Text = "Anti-Seek Obstructions",
                 Default = false
             })
         end
 
-        local Hotel_BypassGroupBox = Tabs.Floor:AddLeftGroupbox("绕过") do
+        local Hotel_BypassGroupBox = Tabs.Floor:AddLeftGroupbox("Bypass") do
             Hotel_BypassGroupBox:AddToggle("AvoidRushAmbush", {
-                Text = "无视 Rush/Ambush",
-                Tooltip = "温室无法使用 :(",
+                Text = "Avoid Rush/Ambush",
+                Tooltip = "Doesn't work for greenhouse :(",
                 Default = false,
                 Risky = true
             })
         end
 
-        local Hotel_ModifiersGroupBox = Tabs.Floor:AddRightGroupbox("修饰符") do
+        local Hotel_ModifiersGroupBox = Tabs.Floor:AddRightGroupbox("Modifiers") do
             Hotel_ModifiersGroupBox:AddToggle("AntiA90", {
-                Text = "移除-A90",
+                Text = "Anti-A90",
                 Default = false
             })
 
             Hotel_ModifiersGroupBox:AddToggle("NoJammin", {
-                Text = "无跳脸",
+                Text = "No Jammin",
                 Default = false
             })
         end
@@ -3112,14 +3186,9 @@ task.spawn(function()
             if jamminEffect then jamminEffect.Enabled = not value end
         end)
     elseif isMines then
-        local Mines_MovementGroupBox = Tabs.Floor:AddLeftGroupbox("floor功能") do
-            Mines_MovementGroupBox:AddToggle("FastLadder", {
-                Text = "快速梯子",
-                Default = false
-            })
-
+        local Mines_MovementGroupBox = Tabs.Floor:AddLeftGroupbox("Movement") do
             Mines_MovementGroupBox:AddSlider("MaxSlopeAngle", {
-                Text = "最大地板角度",
+                Text = "Max Floor Angle",
                 Default = 45,
                 Min = 0,
                 Max = 90,
@@ -3127,31 +3196,36 @@ task.spawn(function()
             })
         end
 
-        local Mines_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("防-怪物") do
+        local Mines_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("Anti-Entity") do
             Mines_AntiEntityGroupBox:AddToggle("AntiGiggle", {
-                Text = "移除-Giggle伤害",
+                Text = "Anti-Giggle",
                 Default = false
             })
 
             Mines_AntiEntityGroupBox:AddToggle("AntiGloomEgg", {
-                Text = "移除-Gloom Egg",
+                Text = "Anti-Gloom Egg",
                 Default = false
             })
 
             Mines_AntiEntityGroupBox:AddToggle("AntiBridgeFall", {
-                Text = "移除-桥梁倒塌",
+                Text = "Anti-Bridge Fall",
+                Default = false
+            })
+
+            Mines_AntiEntityGroupBox:AddToggle("AntiSeekFlood", {
+                Text = "Anti-Seek Flood",
                 Default = false
             })
         end
 
-        local Mines_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("自动") do
+        local Mines_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("Automation") do
             Mines_AutomationGroupBox:AddButton({
-                Text = "自动200水泵",
+                Text = "Beat Door 200",
                 Func = function()
                     if latestRoom.Value < 99 then
                         Script.Functions.Alert({
                             Title = "Beat Door 200",
-                            Description = "好像你还没有到达200门...",
+                            Description = "You haven't reached door 200...",
                             Time = 5
                         })
 
@@ -3215,27 +3289,27 @@ task.spawn(function()
             })
 
             Mines_AutomationGroupBox:AddToggle("TheMinesAnticheatBypass", {
-                Text = "防过热旁路",
+                Text = "Anticheat Bypass",
                 Default = false
             })
         end
 
-        local Mines_BypassGroupBox = Tabs.Floor:AddRightGroupbox("旁路") do
+        local Mines_BypassGroupBox = Tabs.Floor:AddRightGroupbox("Bypass") do
             Mines_BypassGroupBox:AddToggle("MinecartTeleport", {
-                Text = "矿车传送",
+                Text = "Minecart Teleport",
                 Default = false
             })
 
             Mines_BypassGroupBox:AddToggle("MinecartTeleportDebug", {
-                Text = "矿车传送调试",
+                Text = "Minecart Teleport Debug",
                 Default = false,
                 Visible = false,
             })
         end
         
-        local Mines_VisualGroupBox = Tabs.Floor:AddRightGroupbox("画面") do
+        local Mines_VisualGroupBox = Tabs.Floor:AddRightGroupbox("Visuals") do
             Mines_VisualGroupBox:AddToggle("MinecartPathVisualiser", {
-                Text = "可视化正确的搜索路径",
+                Text = "Visualize Correct Seek Path",
                 Default = false
             })
         end
@@ -3292,7 +3366,7 @@ task.spawn(function()
                     remotesFolder.ClimbLadder:FireServer()
                     bypassed = false
                     
-                    Options.SpeedSlider:SetMax(Toggles.SpeedBypass.Value and 45 or (Toggles.EnableJump.Value and 3 or 7))
+                    Options.WalkSpeed:SetMax(Toggles.SpeedBypass.Value and 75 or (Toggles.EnableJump.Value and 18 or 22))
                     Options.FlySpeed:SetMax(Toggles.SpeedBypass.Value and 75 or 22)
                 end
             end
@@ -3359,20 +3433,31 @@ task.spawn(function()
             end
         end)
 
+        Toggles.AntiSeekFlood:OnChanged(function(value)
+            local room = workspace.CurrentRooms:FindFirstChild("100")
+            
+            if room and room:FindFirstChild("_DamHandler") then
+                local seekFlood = room._DamHandler:FindFirstChild("SeekFloodline")
+                if seekFlood then
+                    seekFlood.CanCollide = value
+                end
+            end
+        end)
+
         Toggles.MinecartPathVisualiser:OnChanged(function(value)
             Script.Functions.Minecart.DrawNodes()
         end)
     elseif isBackdoor then
-        local Backdoors_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("防怪物") do
+        local Backdoors_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("Anti-Entity") do
             Backdoors_AntiEntityGroupBox:AddToggle("AntiHasteJumpscare", {
-                Text = "取消红色骷髅跳脸",
+                Text = "Anti Haste Jumpscare",
                 Default = false
             })
         end
 
-        local Backdoors_VisualGroupBox = Tabs.Floor:AddRightGroupbox("视觉") do
+        local Backdoors_VisualGroupBox = Tabs.Floor:AddRightGroupbox("Visual") do
             Backdoors_VisualGroupBox:AddToggle("HasteClock", {
-                Text = "显示时钟",
+                Text = "Haste Clock",
                 Default = true
             })
         end
@@ -3414,16 +3499,16 @@ task.spawn(function()
             end
         end))
     elseif isRooms then
-        local Rooms_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("移除怪物") do
+        local Rooms_AntiEntityGroupBox = Tabs.Floor:AddLeftGroupbox("Anti-Entity") do
             Rooms_AntiEntityGroupBox:AddToggle("AntiA90", {
-                Text = "移除-A90",
+                Text = "Anti-A90",
                 Default = false
             })
         end
 
-        local Rooms_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("自动") do
+        local Rooms_AutomationGroupBox = Tabs.Floor:AddRightGroupbox("Automation") do
             Rooms_AutomationGroupBox:AddToggle("AutoRooms", {
-                Text = "自动A1000",
+                Text = "Auto Rooms",
                 Default = false
             })
 
@@ -3432,12 +3517,12 @@ task.spawn(function()
             Rooms_AutomationGroupBox:AddDivider()
 
             Rooms_AutomationGroupBox:AddToggle("AutoRoomsDebug", { 
-                Text = "显示调试信息",
+                Text = "Show Debug Info",
                 Default = false
             })
             
             Rooms_AutomationGroupBox:AddToggle("ShowAutoRoomsPathNodes", { 
-                Text = "显示寻路节点",
+                Text = "Show Pathfinding Nodes",
                 Default = false
             })
 
@@ -3447,8 +3532,8 @@ task.spawn(function()
             if Toggles.AutoRooms.Value and not value then
                 Script.Functions.Alert({
                     Title = "Auto Rooms",
-                    Description = "自动a1000需要防A-90才能工作！",
-                    Reason = "反A-90已启用",
+                    Description = "Anti A-90 is required for Auto Rooms to work!",
+                    Reason = "Anti A-90 has been enabled",
                 })
                 
                 Toggles.AntiA90:SetValue(true)
@@ -3472,16 +3557,23 @@ task.spawn(function()
                 return GoalLocker.PrimaryPart
             end
 
-            return workspace.CurrentRooms[latestRoom.Value].Door.Door
+            return workspace.CurrentRooms[latestRoom.Value].RoomExit
         end
 
         local _internal_mspaint_pathfinding_nodes = Instance.new("Folder", Workspace) do
             _internal_mspaint_pathfinding_nodes.Name = "_internal_mspaint_pathfinding_nodes"
         end
 
+        local _internal_mspaint_pathfinding_block = Instance.new("Folder", Workspace) do
+            _internal_mspaint_pathfinding_block.Name = "_internal_mspaint_pathfinding_block"
+        end
+
         Toggles.ShowAutoRoomsPathNodes:OnChanged(function(value)
             for _, node in pairs(_internal_mspaint_pathfinding_nodes:GetChildren()) do
                 node.Transparency = value and 0.5 or 1
+            end
+            for _, nodeBlock in pairs(_internal_mspaint_pathfinding_block:GetChildren()) do
+                nodeBlock.Transparency = value and 0.9 or 1
             end
         end)
 
@@ -3505,20 +3597,54 @@ task.spawn(function()
         end))
 
         Toggles.AutoRooms:OnChanged(function(value)
+            local hasResetFailsafe = false
+
+            local function nodeCleanup()
+                _internal_mspaint_pathfinding_nodes:ClearAllChildren()
+                _internal_mspaint_pathfinding_block:ClearAllChildren()
+                hasResetFailsafe = true
+            end
+
             local function moveToCleanup()
                 if humanoid then
                     humanoid:Move(rootPart.Position)
                     humanoid.WalkToPart = nil
                     humanoid.WalkToPoint = rootPart.Position
                 end
+                nodeCleanup()
             end
 
             if value then
                 Toggles.AntiA90:SetValue(true)
+                local lastRoomValue = 0
+
+                local function createNewBlockedPoint(point: PathWaypoint)
+                    local block = Instance.new("Part", _internal_mspaint_pathfinding_block)
+                    local pathMod = Instance.new("PathfindingModifier", block)
+                    pathMod.Label = "_ms_pathBlock"
+
+                    block.Name = "_mspaint_blocked_path"
+                    block.Shape = Enum.PartType.Block
+
+                    local sizeY = 10
+                    
+                    block.Size = Vector3.new(1, sizeY, 1)
+                    block.Color = Color3.fromRGB(255, 130, 30)
+                    block.Material = Enum.Material.Neon
+                    block.Position = point.Position + Vector3.new(0, sizeY / 2, 0)
+                    block.Anchored = true
+                    block.CanCollide = false
+                    block.Transparency = Toggles.ShowAutoRoomsPathNodes.Value and 0.9 or 1
+                end
 
                 local function doAutoRooms()
                     local pathfindingGoal = Script.Functions.GetAutoRoomsPathfindingGoal()
 
+                    if latestRoom.Value ~= lastRoomValue then
+                        _internal_mspaint_pathfinding_block:ClearAllChildren()
+                        lastRoomValue = latestRoom.Value
+                    end
+                    
                     Script.Functions.Log({
                         Title = "Auto Rooms",
                         Description = "Calculated Objective Successfully!\nObjective: " .. pathfindingGoal.Parent.Name .. "\nCreating path...",
@@ -3528,7 +3654,10 @@ task.spawn(function()
                         AgentCanJump = false,
                         AgentCanClimb = false,
                         WaypointSpacing = 2,
-                        AgentRadius = 1
+                        AgentRadius = 1,
+                        Costs = {
+                            _ms_pathBlock = 8 --cost will increase the more stuck you get.
+                        }
                     })
 
                     Script.Functions.Log({
@@ -3538,11 +3667,30 @@ task.spawn(function()
 
                     path:ComputeAsync(rootPart.Position - Vector3.new(0, 2.5, 0), pathfindingGoal.Position)
                     local waypoints = path:GetWaypoints()
+                    local waypointAmount = #waypoints
 
                     if path.Status == Enum.PathStatus.Success then
+                        hasResetFailsafe = true
+                        task.spawn(function()
+                            task.wait(0.1)
+                            hasResetFailsafe = false
+                            if humanoid and collision then
+                                local checkFloor = humanoid.FloorMaterial
+                                local isStuck = checkFloor == Enum.Material.Air or checkFloor == Enum.Material.Concrete
+                                if isStuck then
+                                    repeat task.wait()
+                                        collision.CanCollide = false
+                                        collision.CollisionCrouch.CanCollide = true
+                                    until not isStuck or hasResetFailsafe
+                                    collision.CanCollide = true
+                                end
+                                hasResetFailsafe = true
+                            end
+                        end)
+
                         Script.Functions.Log({
                             Title = "Auto Rooms",
-                            Description = "Computed path successfully with " .. #waypoints .. " waypoints!",
+                            Description = "Computed path successfully with " .. waypointAmount .. " waypoints!",
                         }, Toggles.AutoRoomsDebug.Value)
 
                         _internal_mspaint_pathfinding_nodes:ClearAllChildren()
@@ -3560,11 +3708,11 @@ task.spawn(function()
                             end
                         end
 
+                        local lastWaypoint = nil
                         for i, waypoint in pairs(waypoints) do
                             local moveToFinished = false
                             local recalculate = false
                             local waypointConnection = humanoid.MoveToFinished:Connect(function() moveToFinished = true end)
-
                             if not moveToFinished or not Toggles.AutoRooms.Value then
                                 humanoid:MoveTo(waypoint.Position)
                                 
@@ -3575,7 +3723,7 @@ task.spawn(function()
                                     waypointConnection:Disconnect()
 
                                     if not Toggles.AutoRooms.Value then
-                                        _internal_mspaint_pathfinding_nodes:ClearAllChildren()
+                                        nodeCleanup()
                                         break
                                     else
                                         if _internal_mspaint_pathfinding_nodes:FindFirstChild("_internal_node_" .. i) then
@@ -3594,20 +3742,28 @@ task.spawn(function()
 
                                     Script.Functions.Alert({
                                         Title = "Auto Rooms",
-                                        Description = "似乎你被困住了，试图重新计算路径...",
-                                        Reason = "无法移动到航路点",
+                                        Description = "Seems like you are stuck, trying to recalculate path...",
+                                        Reason = "Failed to move to waypoint",
                                     })
 
                                     recalculate = true
+                                    if lastWaypoint == nil and waypointAmount > 1 then
+                                        waypoint = waypoints[i+1]
+                                    else
+                                        waypoint = waypoints[i-1]
+                                    end
+
+                                    createNewBlockedPoint(waypoint)
                                 end)
                             end
 
                             repeat task.wait() until moveToFinished or not Toggles.AutoRooms.Value or recalculate or Library.Unloaded
+                            lastWaypoint = waypoint
 
                             waypointConnection:Disconnect()
 
                             if not Toggles.AutoRooms.Value then
-                                _internal_mspaint_pathfinding_nodes:ClearAllChildren()
+                                nodeCleanup()
                                 break
                             else
                                 if _internal_mspaint_pathfinding_nodes:FindFirstChild("_internal_node_" .. i) then
@@ -3630,7 +3786,7 @@ task.spawn(function()
                     if latestRoom.Value == 1000 then
                         Script.Functions.Alert({
                             Title = "Auto Rooms",
-                            Description = "你已经到达A-1000",
+                            Description = "You have reached A-1000",
                             Reason = "A-1000 reached by mspaint autorooms",
                         })
 
@@ -3641,14 +3797,13 @@ task.spawn(function()
                 end
                 
                 -- Unload Auto Rooms
-                _internal_mspaint_pathfinding_nodes:ClearAllChildren()
                 moveToCleanup()
             end
         end)
     elseif isFools then
-        local Fools_TrollingGroupBox = Tabs.Floor:AddLeftGroupbox("其余") do
+        local Fools_TrollingGroupBox = Tabs.Floor:AddLeftGroupbox("Trolling") do
             Fools_TrollingGroupBox:AddToggle("GrabBananaJeffToggle",{
-                Text = "夺取 Banana / Jeff",
+                Text = "Grab Banana / Jeff",
                 Default = false
             }):AddKeyPicker("GrabBananaJeff", {
                 Default = "H",
@@ -3659,11 +3814,11 @@ task.spawn(function()
             Fools_TrollingGroupBox:AddLabel("Throw"):AddKeyPicker("ThrowBananaJeff", {
                 Default = "G",
                 Mode = "Hold",
-                Text = "扔"
+                Text = "Throw"
             })
 
             Fools_TrollingGroupBox:AddSlider("ThrowStrength", {
-                Text = "投掷力量",
+                Text = "Throw Strength",
                 Default = 1,
                 Min = 1,
                 Max = 10,
@@ -3707,41 +3862,41 @@ task.spawn(function()
 
         local Fools_AntiEntityGroupBox = Tabs.Floor:AddRightGroupbox("Anti-Entity") do
             Fools_AntiEntityGroupBox:AddToggle("AntiSeekObstructions", {
-                Text = "移除-Seek 手臂",
+                Text = "Anti-Seek Obstructions",
                 Default = false
             })
 
             Fools_AntiEntityGroupBox:AddToggle("AntiBananaPeel", {
-                Text = "移除-香蕉",
+                Text = "Anti-Banana",
                 Default = false
             })
 
             Fools_AntiEntityGroupBox:AddToggle("AntiJeffClient", {
-                Text = "移除-杀手Jeff",
+                Text = "Anti-Jeff",
                 Default = false
             })
         end
 
-        local Fools_BypassGroupBox = Tabs.Floor:AddRightGroupbox("绕过") do
+        local Fools_BypassGroupBox = Tabs.Floor:AddRightGroupbox("Bypass") do
             Fools_BypassGroupBox:AddToggle("InfRevives", {
-                Text = "无限复活",
+                Text = "Infinite Revives",
                 Default = false
             })
 
             Fools_BypassGroupBox:AddToggle("AntiJeffServer", {
-                Text = "反杰夫",
+                Text = "Anti-Jeff (FE)",
                 Default = false
             })
 
             Fools_BypassGroupBox:AddDivider()
 
             Fools_BypassGroupBox:AddToggle("GodmodeNoclipBypassFools", {
-                Text = "上帝模式",
+                Text = "Godmode",
                 Default = false
             })
 
             Fools_BypassGroupBox:AddToggle("FigureGodmodeFools", {
-                Text = "饰 Godmode",
+                Text = "Figure Godmode",
                 Default = false
             })
         end
@@ -3871,8 +4026,8 @@ Toggles.EnableJump:OnChanged(function(value)
         character:SetAttribute("CanJump", value)
     end
 
-    if not value and not Toggles.SpeedBypass.Value and Options.SpeedSlider.Max ~= 7 and not Script.FakeRevive.Enabled then
-        Options.SpeedSlider:SetMax(7)
+    if not value and not Toggles.SpeedBypass.Value and Options.WalkSpeed.Max ~= 22 and not Script.FakeRevive.Enabled then
+        Options.WalkSpeed:SetMax(22)
     end
 end)
 
@@ -3889,15 +4044,8 @@ Toggles.Fly:OnChanged(function(value)
         Script.Connections["Fly"] = RunService.RenderStepped:Connect(function()
             local velocity = Vector3.zero
 
-            if controlModule then
-                local moveVector = controlModule:GetMoveVector()
-                velocity = -((camera.CFrame.LookVector * moveVector.Z) - (camera.CFrame.RightVector * moveVector.X))
-            else
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then velocity += camera.CFrame.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then velocity -= camera.CFrame.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then velocity += camera.CFrame.RightVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then velocity -= camera.CFrame.RightVector end
-            end
+            local moveVector = Script.Functions.GetMoveVector()
+            velocity = -((camera.CFrame.LookVector * moveVector.Z) - (camera.CFrame.RightVector * moveVector.X))
 
             if UserInputService:IsKeyDown(Enum.KeyCode.Space) then velocity += camera.CFrame.UpVector end
             if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then velocity -= camera.CFrame.UpVector end
@@ -3936,12 +4084,22 @@ Options.PromptReachMultiplier:OnChanged(function(value)
     end
 end)
 
+Toggles.AntiDread:OnChanged(function(value)
+    if not mainGame then return end
+    local modules = mainGame:FindFirstChild("Modules", true)
+    local module = modules and (modules:FindFirstChild("Dread", true) or modules:FindFirstChild("_Dread", true))
+
+    if module then
+        module.Name = if value then "_Dread" else "Dread"
+    end
+end)
+
 Toggles.AntiHalt:OnChanged(function(value)
     if not entityModules then return end
     local module = entityModules:FindFirstChild("Shade") or entityModules:FindFirstChild("_Shade")
 
     if module then
-        module.Name = value and "_Shade" or "Shade"
+        module.Name = if value then "_Shade" else "Shade"
     end
 end)
 
@@ -3950,7 +4108,7 @@ Toggles.AntiScreech:OnChanged(function(value)
     local module = mainGame:FindFirstChild("Screech", true) or mainGame:FindFirstChild("_Screech", true)
 
     if module then
-        module.Name = value and "_Screech" or "Screech"
+        module.Name = if value then "_Screech" else "Screech"
     end
 end)
 
@@ -4002,61 +4160,40 @@ Toggles.UpsideDown:OnChanged(function(value)
 end)
 
 function Script.Functions.SpeedBypass()
-    if speedBypassing then return end
+    if speedBypassing or not collisionClone then return end
     speedBypassing = true
 
-    local SpeedBypassMethod = Options.SpeedBypassMethod.Value
-
-    local function cleanup()
-        -- reset if changed speed bypass method
-        speedBypassing = false
-
-        if collisionClone then
-            if SpeedBypassMethod == "Massless" then
-                collisionClone.Massless = true
-            elseif SpeedBypassMethod == "Size" then
-                collisionClone.Size = Vector3.new(3, 5.5, 3)
-            end
-            
-            if Toggles.SpeedBypass.Value and Options.SpeedBypassMethod.Value ~= SpeedBypassMethod and not Script.FakeRevive.Enabled then
-                Script.Functions.SpeedBypass()
-            end
-        end
-    end
-
     task.spawn(function()
-        if SpeedBypassMethod == "Massless" then
-            while Toggles.SpeedBypass.Value and collisionClone and Options.SpeedBypassMethod.Value == SpeedBypassMethod and not Library.Unloaded and not Script.FakeRevive.Enabled do
+        while Toggles.SpeedBypass.Value and collisionClone and not Library.Unloaded and not Script.FakeRevive.Enabled do
+            if rootPart.Anchored then
+                collisionClone.Massless = true
+                repeat task.wait() until not rootPart.Anchored
+                task.wait(0.1)
+            else
                 collisionClone.Massless = not collisionClone.Massless
-                task.wait(Options.SpeedBypassDelay.Value)
             end
-    
-            cleanup()
-        elseif SpeedBypassMethod == "Size" then
-            while Toggles.SpeedBypass.Value and collisionClone and Options.SpeedBypassMethod.Value == SpeedBypassMethod and not Library.Unloaded and not Script.FakeRevive.Enabled do
-                collisionClone.Size = Vector3.new(3, 5.5, 3)
-                task.wait(Options.SpeedBypassDelay.Value)
-                collisionClone.Size = Vector3.new(1.5, 2.75, 1.5)
-                task.wait(Options.SpeedBypassDelay.Value)
-            end
-    
-            cleanup()
+            task.wait(Options.SpeedBypassDelay.Value)
+        end
+
+        speedBypassing = false
+        if collisionClone then
+            collisionClone.Massless = true
         end
     end)
 end
 
 Toggles.SpeedBypass:OnChanged(function(value)
     if value then
-        Options.SpeedSlider:SetMax(45)
+        Options.WalkSpeed:SetMax(75)
         Options.FlySpeed:SetMax(75)
         
         Script.Functions.SpeedBypass()
     else
         if Script.FakeRevive.Enabled then return end
 
-        local speed = if bypassed then 45 elseif Toggles.EnableJump.Value then 3 else 7
+        local speed = if bypassed then 75 elseif Toggles.EnableJump.Value then 18 else 22
 
-        Options.SpeedSlider:SetMax(speed)
+        Options.WalkSpeed:SetMax(speed)
         Options.FlySpeed:SetMax((isMines and Toggles.TheMinesAnticheatBypass.Value and bypassed) and 75 or 22)
     end
 end)
@@ -4066,8 +4203,8 @@ Toggles.FakeRevive:OnChanged(function(value)
         if latestRoom and latestRoom.Value == 0 then
             Script.Functions.Alert({
                 Title = "Fake Revive",
-                Description = "你必须打开下一扇门才能使用假复活",
-                Reason = "你在第一个房间"
+                Description = "You have to open the next door to use fake revive",
+                Reason = "You are in the first room"
             })
             repeat task.wait() until latestRoom.Value > 0
         end
@@ -4111,7 +4248,7 @@ Toggles.FakeRevive:OnChanged(function(value)
         end
 
         Toggles.SpeedBypass:SetValue(false)
-        Options.SpeedSlider:SetMax(45)
+        Options.WalkSpeed:SetMax(75)
         Options.FlySpeed:SetMax(75)
 
         Script.FakeRevive.Enabled = true
@@ -4445,8 +4582,7 @@ Toggles.FakeRevive:OnChanged(function(value)
         
         Script.FakeRevive.Connections["mainStepped"] = RunService.RenderStepped:Connect(function()
             -- deivid gonna get mad at this line :content:
-            if character:FindFirstChild("Humanoid") then character.Humanoid.WalkSpeed = 15 + Options.SpeedSlider.Value end
-            
+            if character:FindFirstChild("Humanoid") then character.Humanoid.WalkSpeed = Options.WalkSpeed.Value end
 
             if rootPart and rootPart.Position.Y < -150 then
                 rootPart.Position = workspace.SpawnLocation.Position
@@ -4894,26 +5030,16 @@ Options.GuidingLightEspColor:OnChanged(function(value)
     end
 end)
 
-Toggles.ESPHighlight:OnChanged(function(value)
-    warn("changing highlight to", value)
+Toggles.ESPRainbow:OnChanged(function(value)
+    ESPLibrary.Rainbow.Set(value)
+end)
 
+Toggles.ESPHighlight:OnChanged(function(value)
     for _, espType in pairs(Script.ESPTable) do
         for _, esp in pairs(espType) do
             esp.SetVisible(value, false)
         end
     end
-end)
-
-Toggles.ESPTracer:OnChanged(function(value)
-    ESPLibrary.Tracers.Set(value)
-end)
-
-Toggles.ESPRainbow:OnChanged(function(value)
-    ESPLibrary.Rainbow.Set(value)
-end)
-
-Toggles.ESPDistance:OnChanged(function(value)
-    ESPLibrary.Distance.Set(value)
 end)
 
 Options.ESPFillTransparency:OnChanged(function(value)
@@ -4932,6 +5058,10 @@ Options.ESPOutlineTransparency:OnChanged(function(value)
     end
 end)
 
+Toggles.ESPDistance:OnChanged(function(value)
+    ESPLibrary.Distance.Set(value)
+end)
+
 Options.ESPTextSize:OnChanged(function(value)
     for _, espType in pairs(Script.ESPTable) do
         for _, esp in pairs(espType) do
@@ -4940,10 +5070,26 @@ Options.ESPTextSize:OnChanged(function(value)
     end
 end)
 
+Toggles.ESPTracer:OnChanged(function(value)
+    ESPLibrary.Tracers.Set(value)
+end)
+
 Options.ESPTracerStart:OnChanged(function(value)
     for _, espType in pairs(Script.ESPTable) do
         for _, esp in pairs(espType) do
             esp.Update({ Tracer = { From = value } })
+        end
+    end
+end)
+
+Toggles.ESPArrow:OnChanged(function(value)
+    ESPLibrary.Arrows.Set(value)
+end)
+
+Options.ESPArrowCenterOffset:OnChanged(function(value)
+    for _, espType in pairs(Script.ESPTable) do
+        for _, esp in pairs(espType) do
+            esp.Update({ Arrow = { CenterOffset = value } })
         end
     end
 end)
@@ -4957,7 +5103,7 @@ Toggles.Fullbright:OnChanged(function(value)
         Lighting.Ambient = Color3.new(1, 1, 1)
     else
         if alive then
-            Lighting.Ambient = workspace.CurrentRooms[localPlayer:GetAttribute("CurrentRoom")]:GetAttribute("Ambient")
+            Lighting.Ambient = workspace.CurrentRooms[currentRoom]:GetAttribute("Ambient")
         else
             Lighting.Ambient = Color3.new(0, 0, 0)
         end
@@ -4996,10 +5142,10 @@ Toggles.AntiLag:OnChanged(function(value)
         end
     end
 
-    workspace.Terrain.WaterReflectance = value and 0 or 1
-    workspace.Terrain.WaterTransparency = value and 0 or 1
-    workspace.Terrain.WaterWaveSize = value and 0 or 0.05
-    workspace.Terrain.WaterWaveSpeed = value and 0 or 8
+    workspace.Terrain.WaterReflectance = if value then 0 else 1
+    workspace.Terrain.WaterTransparency = if value then 0 else 1
+    workspace.Terrain.WaterWaveSize = if value then 0 else 0.05
+    workspace.Terrain.WaterWaveSpeed = if value then 0 else 8
     Lighting.GlobalShadows = not value
 end)
 
@@ -5063,8 +5209,34 @@ Toggles.TranslucentHidingSpot:OnChanged(function(value)
     end
 end)
 
---// Connections \\--
+Toggles.NoGlitchEffect:OnChanged(function(value)
+    if not entityModules then return end
+    local module = entityModules:FindFirstChild("Glitch") or entityModules:FindFirstChild("_Glitch")
 
+    if module then
+        module.Name = if value then "_Glitch" else "Glitch"
+    end
+end)
+
+Toggles.NoVoidEffect:OnChanged(function(value)
+    if not entityModules then return end
+    local module = entityModules:FindFirstChild("Void") or entityModules:FindFirstChild("_Void")
+
+    if module then
+        module.Name = if value then "_Void" else "Void"
+    end
+end)
+
+Toggles.NoSpiderJumpscare:OnChanged(function(value)
+    if not mainGame then return end
+    local module = mainGame:FindFirstChild("SpiderJumpscare", true) or mainGame:FindFirstChild("_SpiderJumpscare", true)
+
+    if module then
+        module.Name = if value then "_SpiderJumpscare" else "SpiderJumpscare"
+    end
+end)
+
+--// Connections \\--
 if ExecutorSupport["hookmetamethod"] and ExecutorSupport["getnamecallmethod"] then
     mtHook = hookmetamethod(game, "__namecall", function(self, ...)
         local args = {...}
@@ -5138,30 +5310,33 @@ Library:GiveSignal(remotesFolder.HideMonster.OnClientEvent:Connect(function()
 end))
 
 Library:GiveSignal(ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
-    if player ~= localPlayer or not character or isFools then return end
+    if not Toggles.InfItems.Value or player ~= localPlayer or not character or isFools then return end
     
     local isDoorLock = prompt.Name == "UnlockPrompt" and prompt.Parent.Name == "Lock" and not prompt.Parent.Parent:GetAttribute("Opened")
     local isSkeletonDoor = prompt.Name == "SkullPrompt" and prompt.Parent.Name == "SkullLock" and not (prompt.Parent:FindFirstChild("Door") and prompt.Parent.Door.Transparency == 1)
-    local isChestBox = prompt.Name == "ActivateEventPrompt" and prompt.Parent.Name == "ChestBoxLocked" and prompt.Parent:GetAttribute("Locked")
+    local isChestBox = prompt.Name == "ActivateEventPrompt" and prompt.Parent:GetAttribute("Locked") and (prompt.Parent.Name:match("Chest") or prompt.Parent:GetAttribute("LockAttribute") == "CanCutVines" or prompt.Parent.Name == "CuttableVines")
     local isRoomsDoorLock = prompt.Parent.Parent.Parent.Name == "RoomsDoor_Entrance" and prompt.Enabled
     
     if isDoorLock or isSkeletonDoor or isChestBox or isRoomsDoorLock then
         local equippedTool = character:FindFirstChildOfClass("Tool")
         local toolId = equippedTool and equippedTool:GetAttribute("ID")
 
-        if Toggles.InfItems.Value and equippedTool and equippedTool:GetAttribute("UniversalKey") then
-            task.wait(isChestBox and 0.05 or 0)
+        if equippedTool and (equippedTool:GetAttribute("UniversalKey") or equippedTool:GetAttribute("CanCutVines")) then
+            if not isChestBox then task.wait() end
             remotesFolder.DropItem:FireServer(equippedTool)
 
             task.spawn(function()
-                equippedTool.Destroying:Wait() 
-                task.wait(0.15)
+                workspace.Drops.ChildAdded:Wait()
+                task.wait(0.05)
 
                 local itemPickupPrompt = Script.Functions.GetNearestPromptWithCondition(function(prompt)
-                    return prompt.Name == "ModulePrompt" and prompt.Parent:GetAttribute("Tool_ID") == toolId
+                    return prompt.Name == "ModulePrompt" and prompt:IsDescendantOf(workspace.Drops)
                 end)
 
                 if itemPickupPrompt then
+                    if isChestBox then
+                        firePrompt(prompt)
+                    end
                     firePrompt(itemPickupPrompt)
                 end
             end)
@@ -5221,7 +5396,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
                     if Options.NotifyEntity.Value[shortName] then
                         Script.Functions.Alert({
                             Title = "ENTITIES",
-                            Description = shortName .. " 怪物生成了！",
+                            Description = string.format("%s %s", shortName, Options.NotifyEntityMessage.Value),
                             Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "Go find a hiding place!" or nil),
                             Image = EntityTable.NotifyReason[child.Name].Image,
 
@@ -5229,7 +5404,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
                         })
 
                         if Toggles.NotifyChat.Value then
-                            RBXGeneral:SendAsync(shortName .. " 怪物出现！！!")
+                            RBXGeneral:SendAsync(string.format("%s %s", shortName, Options.NotifyEntityMessage.Value))
                         end
                     end
                 end
@@ -5237,7 +5412,7 @@ Library:GiveSignal(workspace.ChildAdded:Connect(function(child)
         elseif EntityTable.NotifyMessage[child.Name] and Options.NotifyEntity.Value[shortName] then
             Script.Functions.Alert({
                 Title = "ENTITIES",
-                Description = shortName .. " 怪物刷新",
+                Description = string.format("%s %s", shortName, Options.NotifyEntityMessage.Value),
                 Reason = (not EntityTable.NotifyReason[child.Name].Spawned and "Go find a hiding place!" or nil),
                 Image = EntityTable.NotifyReason[child.Name].Image,
 
@@ -5450,9 +5625,9 @@ Library:GiveSignal(localPlayer.CharacterAdded:Connect(function(newCharacter)
         end
 
         if isMines and Toggles.EnableJump.Value then
-            Options.SpeedSlider:SetMax((Toggles.TheMinesAnticheatBypass.Value and bypassed) and 45 or 3)
+            Options.WalkSpeed:SetMax((Toggles.TheMinesAnticheatBypass.Value and bypassed) and 75 or 18)
         else
-            Options.SpeedSlider:SetMax((isMines and Toggles.TheMinesAnticheatBypass.Value and bypassed) and 45 or 7)
+            Options.WalkSpeed:SetMax((isMines and Toggles.TheMinesAnticheatBypass.Value and bypassed) and 75 or 22)
         end
 
         Options.FlySpeed:SetMax((isMines and Toggles.TheMinesAnticheatBypass.Value and bypassed) and 75 or 22)
@@ -5460,8 +5635,14 @@ Library:GiveSignal(localPlayer.CharacterAdded:Connect(function(newCharacter)
 end))
 
 Library:GiveSignal(localPlayer.OnTeleport:Connect(function(state)
-    if (state == Enum.TeleportState.RequestedFromServer or state == state == Enum.TeleportState.Started) and Toggles.ExecuteOnTeleport.Value then
-        queue_on_teleport([[loadstring(game:HttpGet("https://raw.githubusercontent.com/notpoiu/mspaint/main/main.lua"))()]])
+    if (state == Enum.TeleportState.RequestedFromServer or state == Enum.TeleportState.Started) and Toggles.ExecuteOnTeleport.Value and not getgenv().queued_to_teleport then
+        local executeString = [[loadstring(game:HttpGet("https://raw.githubusercontent.com/notpoiu/mspaint/main/main.lua"))()]]
+        if getgenv().mspaint_dev_mode then
+            executeString = [[getgenv().mspaint_dev_mode = true; loadstring(game:HttpGet("https://raw.githubusercontent.com/notpoiu/mspaint/dev/main.lua"))()]]
+        end
+        
+        getgenv().queued_to_teleport = true
+        queue_on_teleport(executeString)
     end
 end))
 
@@ -5478,10 +5659,20 @@ end))
 if workspace.CurrentRooms:FindFirstChild(currentRoom) then
     task.spawn(Script.Functions.SetupCurrentRoomConnection, workspace.CurrentRooms[currentRoom])
 end
+
+
+Library:GiveSignal(latestRoom:GetPropertyChangedSignal("Value"):Connect(function()
+    Script.Functions.NotifyGlitch()
+end))
+
 Library:GiveSignal(localPlayer:GetAttributeChangedSignal("CurrentRoom"):Connect(function()
+    if currentRoom == localPlayer:GetAttribute("CurrentRoom") then return end
+
     currentRoom = localPlayer:GetAttribute("CurrentRoom")
     nextRoom = currentRoom + 1
     task.spawn(Script.Functions.UpdateRPC)
+
+    Script.Functions.NotifyGlitch()
 
     local currentRoomModel = workspace.CurrentRooms:FindFirstChild(currentRoom)
     local nextRoomModel = workspace.CurrentRooms:FindFirstChild(nextRoom)
@@ -5496,7 +5687,7 @@ Library:GiveSignal(localPlayer:GetAttributeChangedSignal("CurrentRoom"):Connect(
             LinoriaMessage = "Halt has broken anticheat bypass, please go on a ladder again to fix it.",
         })
 
-        Options.SpeedSlider:SetMax(Toggles.SpeedBypass.Value and 45 or (Toggles.EnableJump.Value and 3 or 7))
+        Options.WalkSpeed:SetMax(Toggles.SpeedBypass.Value and 75 or (Toggles.EnableJump.Value and 18 or 22))
         Options.FlySpeed:SetMax(Toggles.SpeedBypass.Value and 75 or 22)
     end
 
@@ -5594,15 +5785,35 @@ Library:GiveSignal(playerGui.ChildAdded:Connect(function(child)
                     end
 
                     if mainGame:WaitForChild("RemoteListener", 5) then
+                        local modules = mainGame:FindFirstChild("Modules", true)
+                        if not modules then return end
+                    
+                        if Toggles.AntiDread.Value then
+                            local module = modules:FindFirstChild("Dread", true)
+    
+                            if module then
+                                module.Name = "_Dread"
+                            end
+                        end
+
                         if Toggles.AntiScreech.Value then
-                            local module = mainGame:FindFirstChild("Screech", true)
+                            local module = modules:FindFirstChild("Screech", true)
     
                             if module then
                                 module.Name = "_Screech"
                             end
                         end
+
+                        if Toggles.NoSpiderJumpscare.Value then
+                            local module = modules:FindFirstChild("SpiderJumpscare", true)
+    
+                            if module then
+                                module.Name = "_SpiderJumpscare"
+                            end
+                        end
+
                         if (isHotel or isRooms) and Toggles.AntiA90.Value then
-                            local module = mainGame:FindFirstChild("A90", true)
+                            local module = modules:FindFirstChild("A90", true)
     
                             if module then
                                 module.Name = "_A90"
@@ -5690,6 +5901,42 @@ Library:GiveSignal(UserInputService.InputBegan:Connect(function(input, gameProce
     end
 end))
 
+Library:GiveSignal(UserInputService.InputChanged:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick1  then
+        Script.CustomControls.GamepadMoveVector = Vector3.new(input.Position.X, 0, -input.Position.Y)
+    end
+end))
+
+Library:GiveSignal(UserInputService.TouchStarted:Connect(function(input)
+    Script.CustomControls.TouchInput = input
+    Script.CustomControls.TouchStartPosition = input.Position
+end))
+
+Library:GiveSignal(UserInputService.TouchMoved:Connect(function(input)
+    if input ~= Script.CustomControls.TouchInput then return end
+    
+    if Script.CustomControls.TouchStartPosition and input.Position then
+        local moveDirection = (input.Position - Script.CustomControls.TouchStartPosition).Unit
+        local distance = (input.Position - Script.CustomControls.TouchStartPosition).Magnitude
+
+        if distance > Script.CustomControls.ThumbstickRadius then
+            distance = Script.CustomControls.ThumbstickRadius
+        end
+
+        local adjustedDistance = distance / Script.CustomControls.ThumbstickRadius
+        Script.CustomControls.ThumbstickMoveVector = Vector3.new(moveDirection.X * adjustedDistance, 0, moveDirection.Y * adjustedDistance)
+    end
+end))
+
+Library:GiveSignal(UserInputService.TouchEnded:Connect(function(input)
+    if input ~= Script.CustomControls.TouchInput then return end
+    
+    Script.CustomControls.ThumbstickMoveVector = Vector3.new(0, 0, 0)
+    Script.CustomControls.TouchInput = nil
+end))
+
 Library:GiveSignal(RunService.RenderStepped:Connect(function()
     if not Toggles.ShowCustomCursor.Value and Library.Toggled then
         UserInputService.MouseBehavior = Enum.MouseBehavior.Default
@@ -5703,6 +5950,11 @@ Library:GiveSignal(RunService.RenderStepped:Connect(function()
             camera.CFrame = mainGameSrc.finalCamCFrame * CFrame.new(1.5, -0.5, 6.5)
         end
         mainGameSrc.fovtarget = Options.FOV.Value
+
+        if Toggles.NoCamBob.Value then
+            mainGameSrc.bobspring.Position = Vector3.new()
+            mainGameSrc.spring.Position = Vector3.new()
+        end
 
         if Toggles.NoCamShake.Value then
             mainGameSrc.csgo = CFrame.new()
@@ -5720,21 +5972,12 @@ Library:GiveSignal(RunService.RenderStepped:Connect(function()
             character.Head.LocalTransparencyModifier = isThirdPersonEnabled and 0 or 1
         end
 
-        local speedBoostAssignObj = if isFools then humanoid else character
-        if isMines and Toggles.FastLadder.Value and character:GetAttribute("Climbing") then
-            character:SetAttribute("SpeedBoostBehind", 50)
-        else
-            speedBoostAssignObj:SetAttribute("SpeedBoostBehind", Options.SpeedSlider.Value)
+        if humanoid and Toggles.EnableSpeedHack.Value then
+            humanoid.WalkSpeed = if character:GetAttribute("Climbing") then Options.LadderSpeed.Value else Options.WalkSpeed.Value
         end
 
         if rootPart then
             rootPart.CanCollide = not Toggles.Noclip.Value
-
-            if rootPart.AssemblyLinearVelocity.Magnitude > (Options.VelocityLimiter.Value * 10) then
-                velocityLimiter.Enabled = true
-            else
-                velocityLimiter.Enabled = false
-            end
         end
         
         if collision then
@@ -5763,49 +6006,46 @@ Library:GiveSignal(RunService.RenderStepped:Connect(function()
 
         if Toggles.AutoInteract.Value and (Library.IsMobile or Options.AutoInteractKey:GetState()) then
             local prompts = Script.Functions.GetAllPromptsWithCondition(function(prompt)
-                if isRetro and prompt.Parent.Parent.Name == "RetroWardrobe" then
-                    return false
-                end
+                if not prompt.Parent then return false end
+
+                if Options.AutoInteractIgnore.Value["Jeff Items"] and prompt.Parent:GetAttribute("JeffShop") then return false end
+                if Options.AutoInteractIgnore.Value["Unlock w/ Lockpick"] and (prompt.Name == "UnlockPrompt" or prompt.Parent:GetAttribute("Locked")) and character:FindFirstChild("Lockpick") then return false end
+                if Options.AutoInteractIgnore.Value["Paintings"] and prompt.Name == "PropPrompt" then return false end
+                if Options.AutoInteractIgnore.Value["Gold"] and prompt.Name == "LootPrompt" then return false end
+                if Options.AutoInteractIgnore.Value["Light Source Items"] and prompt.Parent:GetAttribute("Tool_LightSource") and not prompt.Parent:GetAttribute("Tool_CanCutVines") then return false end
+                if Options.AutoInteractIgnore.Value["Skull Prompt"] and prompt.Name == "SkullPrompt" then return false end
+
+                if prompt.Parent:GetAttribute("PropType") == "Battery" and not (character:FindFirstChildOfClass("Tool") and (character:FindFirstChildOfClass("Tool"):GetAttribute("RechargeProp") == "Battery" or character:FindFirstChildOfClass("Tool"):GetAttribute("StorageProp") == "Battery")) then return false end 
+                if prompt.Parent:GetAttribute("PropType") == "Heal" and humanoid and humanoid.Health == humanoid.MaxHealth then return false end
+                if prompt.Parent.Name == "MinesAnchor" then return false end
+
+                if isRetro and prompt.Parent.Parent.Name == "RetroWardrobe" then return false end
 
                 return PromptTable.Aura[prompt.Name] ~= nil
             end)
 
             for _, prompt: ProximityPrompt in pairs(prompts) do
-                if not prompt.Parent then continue end
-                if prompt.Parent:GetAttribute("JeffShop") then continue end
-                if prompt.Parent:GetAttribute("PropType") == "Battery" and ((character:FindFirstChildOfClass("Tool") and character:FindFirstChildOfClass("Tool"):GetAttribute("RechargeProp") ~= "Battery") or character:FindFirstChildOfClass("Tool") == nil) then continue end 
-                if prompt.Parent:GetAttribute("PropType") == "Heal" and humanoid and humanoid.Health == humanoid.MaxHealth then continue end
-
                 task.spawn(function()
                     -- checks if distance can interact with prompt and if prompt can be interacted again
                     if Script.Functions.DistanceFromCharacter(prompt.Parent) < prompt.MaxActivationDistance and (not prompt:GetAttribute("Interactions" .. localPlayer.Name) or PromptTable.Aura[prompt.Name] or table.find(PromptTable.AuraObjects, prompt.Parent.Name)) then
-                        -- painting checks
-                        if prompt.Parent.Name == "Slot" and prompt.Parent:GetAttribute("Hint") and character then
-                            if Script.Temp.PaintingDebounce then return end
-                            
+                        if prompt.Parent.Name == "Slot" and prompt.Parent:GetAttribute("Hint") then
+                            if Script.Temp.PaintingDebounce[prompt] then return end
+
                             local currentPainting = character:FindFirstChild("Prop")
-                            if not currentPainting and prompt.Parent:FindFirstChild("Prop") and prompt.Parent:GetAttribute("Hint") ~= prompt.Parent.Prop:GetAttribute("Hint") then
-                                return firePrompt(prompt)
+                            local slotPainting = prompt.Parent:FindFirstChild("Prop")
+
+                            local currentHint = (currentPainting and currentPainting:GetAttribute("Hint"))
+                            local slotHint = (slotPainting and slotPainting:GetAttribute("Hint"))
+                            local promptHint = prompt.Parent:GetAttribute("Hint")
+
+                            print(currentHint, slotHint, promptHint)
+                            if slotHint ~= promptHint and (currentHint == promptHint or slotPainting) then
+                                Script.Temp.PaintingDebounce[prompt] = true
+                                firePrompt(prompt)
+                                task.wait(0.3)
+                                Script.Temp.PaintingDebounce[prompt] = false    
                             end
-
-                            if prompt.Parent:FindFirstChild("Prop") then 
-                                if prompt.Parent:GetAttribute("Hint") == prompt.Parent.Prop:GetAttribute("Hint") then
-                                    return
-                                end
-                            end
-
-                            if prompt.Parent:GetAttribute("Hint") == currentPainting:GetAttribute("Hint") then
-                                Script.Temp.PaintingDebounce = true
-
-                                local oldHint = currentPainting:GetAttribute("Hint")
-                                repeat task.wait()
-                                    firePrompt(prompt)
-                                until not character:FindFirstChild("Prop") or character:FindFirstChild("Prop"):GetAttribute("Hint") ~= oldHint
-
-                                task.wait(0.15)
-                                Script.Temp.PaintingDebounce = false
-                            end                            
-                            
+        
                             return
                         end
                         
@@ -5983,31 +6223,45 @@ Library:OnUnload(function()
 
         local speedBoostAssignObj = isFools and humanoid or character
         speedBoostAssignObj:SetAttribute("SpeedBoostBehind", 0)
-
-        if velocityLimiter then
-            velocityLimiter:Destroy()
-        end
     end
 
     if alive then
-        Lighting.Ambient = workspace.CurrentRooms[localPlayer:GetAttribute("CurrentRoom")]:GetAttribute("Ambient")
+        Lighting.Ambient = workspace.CurrentRooms[currentRoom]:GetAttribute("Ambient")
     else
         Lighting.Ambient = Color3.new(0, 0, 0)
     end
 
     if entityModules then
-        local module = entityModules:FindFirstChild("_Shade")
+        local haltModule = entityModules:FindFirstChild("_Shade")
+        local glitchModule = entityModules:FindFirstChild("_Glitch")
+        local voidModule = entityModules:FindFirstChild("_Void")
 
-        if module then
-            module.Name = "Shade"
+        if haltModule then
+            haltModule.Name = "Shade"
+        end
+        if glitchModule then
+            glitchModule.Name = "Glitch"
+        end
+        if voidModule then
+            voidModule.Name = "Void"
         end
     end
 
     if mainGame then
-        local module = mainGame:FindFirstChild("_Screech", true)
+        local modules = mainGame:FindFirstChild("Modules", true)
 
-        if module then
-            module.Name = "Screech"
+        local dreadModule = modules and modules:FindFirstChild("_Dread", true)
+        local screechModule = modules and modules:FindFirstChild("_Screech", true)
+        local spiderModule = modules and modules:FindFirstChild("_SpiderJumpscare", true)
+
+        if dreadModule then
+            dreadModule.Name = "Dread"
+        end
+        if screechModule then
+            screechModule.Name = "Screech"
+        end
+        if spiderModule then
+            spiderModule.Name = "SpiderJumpscare"
         end
     end
 
@@ -6043,6 +6297,9 @@ Library:OnUnload(function()
     if isRooms then
         if workspace:FindFirstChild("_internal_mspaint_pathfinding_nodes") then
             workspace:FindFirstChild("_internal_mspaint_pathfinding_nodes"):Destroy()
+        end
+        if workspace:FindFirstChild("_internal_mspaint_pathfinding_block") then
+            workspace:FindFirstChild("_internal_mspaint_pathfinding_block"):Destroy()
         end
     end
 
@@ -6083,22 +6340,22 @@ Library:OnUnload(function()
     getgenv().mspaint_loaded = false
 end)
 
-local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("其余")
+local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
 local CreditsGroup = Tabs["UI Settings"]:AddRightGroupbox("Credits")
 
-MenuGroup:AddToggle("ExecuteOnTeleport", { Default = false, Text = "传送时执行", Visible = ExecutorSupport["queue_on_teleport"] })
-MenuGroup:AddToggle("KeybindMenuOpen", { Default = false, Text = "打开 Keybind 菜单", Callback = function(value) Library.KeybindFrame.Visible = value end})
-MenuGroup:AddToggle("ShowCustomCursor", {Text = "自定义光标", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
+MenuGroup:AddToggle("ExecuteOnTeleport", { Default = false, Text = "Execute on Teleport", Visible = ExecutorSupport["queue_on_teleport"] })
+MenuGroup:AddToggle("KeybindMenuOpen", { Default = false, Text = "Open Keybind Menu", Callback = function(value) Library.KeybindFrame.Visible = value end})
+MenuGroup:AddToggle("ShowCustomCursor", {Text = "Custom Cursor", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
 MenuGroup:AddDivider()
 MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
-MenuGroup:AddButton("加入 Discord", function()
+MenuGroup:AddButton("Join Discord", function()
     local Inviter = loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Utilities/main/Discord%20Inviter/Source.lua"))()
     Inviter.Join("https://discord.com/invite/cfyMptntHr")
     Inviter.Prompt({
         name = "mspaint",
         invite = "https://discord.com/invite/cfyMptntHr",
     })
-end):AddButton("复制 Link", function()
+end):AddButton("Copy Link", function()
     if setclipboard then
         setclipboard("https://discord.com/invite/cfyMptntHr")
         Library:Notify("Copied discord link to clipboard!")
@@ -6106,16 +6363,13 @@ end):AddButton("复制 Link", function()
         Library:Notify("Discord link: https://discord.com/invite/cfyMptntHr", 10)
     end
 end)
-MenuGroup:AddButton("倾销", function() Library:Unload() end)
+MenuGroup:AddButton("Unload", function() Library:Unload() end)
 
-CreditsGroup:AddLabel("开发商:")
-CreditsGroup:AddLabel("upio -所有者")
-CreditsGroup:AddLabel("主脚本开发")
+CreditsGroup:AddLabel("Developers:")
+CreditsGroup:AddLabel("upio - owner")
+CreditsGroup:AddLabel("deividcomsono - main script dev")
 CreditsGroup:AddLabel("mstudio45")
 CreditsGroup:AddLabel("bacalhauz")
-CreditsGroup:AddLabel("汉化作者:小玄奘【已退圈】")
-CreditsGroup:AddLabel("修复辅助:du8")
-CreditsGroup:AddLabel("参与者:lolyex【暂退】")
 
 Library.ToggleKeybind = Options.MenuKeybind
 
