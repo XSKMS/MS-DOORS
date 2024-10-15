@@ -3,8 +3,8 @@
 local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/VeaMSRZK"))()
 
 OrionLib:MakeNotification({
-                    Name = "XSKil Msa 免费",
-                    Content = "欢迎使用【汉化作者已退圈】",
+                    Name = "XSKil 重要提醒",
+                    Content = "MS汉化作者换新的UI了，导致MS所有汉化无法使用",
                     Time = 4
                 })    
                 
@@ -16,7 +16,7 @@ wait(1)
 
 OrionLib:MakeNotification({
                     Name = "你的注入器："..identifyexecutor(),
-                    Content = "注入器检测",
+                    Content = "到时候会更新",
                     Time = 4
                 })
                 
@@ -28,7 +28,7 @@ wait(1)
 
 OrionLib:MakeNotification({
                     Name = "用户名："..game.Players.LocalPlayer.Character.Name,
-                    Content = "用户名检测",
+                    Content = "等待此汉化制作完成",
                     Time = 4
                 })    
                 
