@@ -5,14 +5,14 @@ local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/VeaMSRZK"))()
 OrionLib:MakeNotification({
                     Name = "XSKil 重要提醒",
                     Content = "停止更新",
-                    Time = 4
+                    Time = 1000
                 })    
                 
                 local sound = Instance.new("Sound", workspace)
 sound.SoundId = "rbxassetid://4590662766"
 sound:Play()
 
-wait(1)
+wait(1000)
 
 OrionLib:MakeNotification({
                     Name = "你的注入器："..identifyexecutor(),
