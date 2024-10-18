@@ -4,7 +4,7 @@ local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/VeaMSRZK"))()
 
 OrionLib:MakeNotification({
                     Name = "XSKil 重要提醒",
-                    Content = "MS汉化作者换新的UI了，导致MS所有汉化无法使用",
+                    Content = "停止更新",
                     Time = 4
                 })    
                 
